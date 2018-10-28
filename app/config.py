@@ -3,7 +3,7 @@ from typing import Union, Tuple
 
 to_load: Union[str, Tuple[str, bool]] = [
     # flask settings
-    ("SERVER_NAME", "localhost:1244"),
+    ("SERVER_NAME", "localhost:1243"),
     ("CROSS_ORIGIN", True),
     ("DEBUG", True),
     ("FLASK_DEBUG", True),

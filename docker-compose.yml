@@ -18,7 +18,7 @@ services:
     restart: always
     build: ./app
     ports:
-        - "1244:80"
+        - "1243:80"
     depends_on:
         - db
     environment:
