@@ -16,9 +16,9 @@ services:
   s_service:
     container_name: cryptic_dev_service_1
     restart: always
-    build: .
+    build: ./app
     ports:
-        - "1241:80"
+        - "1243:80"
     depends_on:
         - db
     environment:
