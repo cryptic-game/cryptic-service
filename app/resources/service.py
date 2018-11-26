@@ -41,7 +41,7 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(PublicServiceResponseSchema)
     @service_api.response(404, "Not Found", ErrorSchema)
     def get(self, device, uuid):
-        device_api_response : request = post(config["DEVICE_API"] + "/" + str(device) + "/").json()
+        device_api_response : request = post(config["DEVICE_API"] + str(device) + "/").json()
 
         if device_api_response.status_code == 200:
             try:
