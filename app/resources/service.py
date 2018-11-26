@@ -24,10 +24,6 @@ PrivateServiceResponseSchema = api.model("Private Service Response", {
     "device": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the device's uuid")
 })
 
-PrivateServicesModificationResponseSchema = api.model("Private Service Modification Response", {
-    "success": fields.Boolean(example=True, description="if the requested action was successfull")
-})
-
 PrivateServicesResponseSchema = api.model("Private Services Resonse", {
     "services": fields.List(fields.Nested(PrivateServiceResponseSchema),
                             example="[{},{}]",
@@ -45,15 +41,16 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(PublicServiceResponseSchema)
     @service_api.response(404, "Not Found", ErrorSchema)
     def get(self, device, uuid):
+        device_api_response : request = post(config["DEVICE_API"] + "/" + str(device) + "/").json()
 
-        device_api_response = post(config["DEVICE_API"] + "/" + str(device) + "/").json()
-
-        if device_api_response.status_code != 200:
+        if device_api_response.status_code == 200:
             try:
                 if device_api_response["online"] != True:
-                    abort(400, "Device is not online or not found")
+                    abort(400, "Device is not online or not service found")
             except Exception:
                 abort(400, "invalid device uuid")
+        else:
+            abort(400, "device api is offline")
 
         service: Optional[Service] = Service.query.filter_by(uuid=uuid, device=device).first()
 
@@ -71,7 +68,6 @@ class PrivateDeviceAPI(Resource):
     @service_api.response(404, "Not Found", ErrorSchema)
     @require_session
     def get(self, session, uuid_device, uuid_service):
-
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
         if session["owner"] != service.owner:
@@ -89,7 +85,6 @@ class PrivateDeviceAPI(Resource):
     @service_api.response(404, "Not Found", ErrorSchema)
     @require_session
     def post(self, session, uuid_device, uuid_service):
-
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
         if session["owner"] != service.owner:
@@ -110,7 +105,6 @@ class PrivateDeviceAPI(Resource):
     @service_api.response(404, "Not Found", ErrorSchema)
     @require_session
     def delete(self, session, uuid_device, uuid_service):
-
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
         if session["owner"] != service.owner:
@@ -134,7 +128,6 @@ class PrivateDeviceModificationAPI(Resource):
     @service_api.response(400, "Invalid Input", ErrorSchema)
     @require_session
     def get(self, session, device):
-
         services: List[Service] = Service.query.filter_by(owner=session["owner"], device=device).all()
 
         return {
@@ -149,14 +142,14 @@ class PrivateDeviceModificationAPI(Resource):
         owner: str = session["owner"]
         name: str = request.json["name"]
 
-        available_services: List = ["SSH", "Telnet"]
+        available_services: List[str] = ["SSH", "Telnet"]
 
         if name not in available_services:
             abort(404, "Service is not supported")
 
-        if \
-        (db.session.query(func.count(Service.name)).filter(Service.owner == owner, Service.device == device)).first()[
-            0] != 0:
+        service_count : int = (db.session.query(func.count(Service.name)).filter(Service.owner == owner, Service.device == device)).first()[0]
+
+        if service_count != 0:
             abort(400, "you already own a service with the name " + name + " on this device")
 
         service: Service = Service.create(owner, device, True)

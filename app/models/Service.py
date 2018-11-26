@@ -4,7 +4,8 @@ import random
 
 
 class Service(db.Model):
-    __tablename__: str = "services"
+    __tablename__: str = "service"
+
     uuid: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
     device: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
     owner: db.Column = db.Column(db.String(32), nullable=False)
