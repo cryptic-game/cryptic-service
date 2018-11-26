@@ -24,10 +24,10 @@ to_load: Union[str, Tuple[str, bool]] = [
     # default (online)
     ("AUTH_API", "https://user.api.cryptic-game.net/"),
     ("DEVICE_API", "https://device.api.cryptic-game.net/"),
-   # ("AUTH_API", "0.0.0.0:1240"),
-    #("DEVICE_API", "0.0.0.0:1241")
+
     # default (local)
-    # ("AUTH_API", "http://localhost:1240/")
+    #("AUTH_API", "http://localhost:1240/"),
+    #("DEVICE_API", "http://localhost:1241/")
 ]
 
 # the final configuration dict
