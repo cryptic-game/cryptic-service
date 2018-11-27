@@ -16,11 +16,11 @@ to_load: Union[str, Tuple[str, bool]] = [
     ("MYSQL_PASSWORD", "cryptic"),
     ("SQLALCHEMY_TRACK_MODIFICATIONS", False),
 
+    # other apis
     # flask-restplus
     ("SWAGGER_UI_JSONEDITOR", True),
     ("RESTPLUS_MASK_SWAGGER", False),
 
-    # other apis
     # default (online)
     ("AUTH_API", "https://user.api.cryptic-game.net/"),
     ("DEVICE_API", "https://device.api.cryptic-game.net/"),
