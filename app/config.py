@@ -16,18 +16,18 @@ to_load: Union[str, Tuple[str, bool]] = [
     ("MYSQL_PASSWORD", "cryptic"),
     ("SQLALCHEMY_TRACK_MODIFICATIONS", False),
 
-    # other apis
     # flask-restplus
     ("SWAGGER_UI_JSONEDITOR", True),
     ("RESTPLUS_MASK_SWAGGER", False),
 
+    # other apis
     # default (online)
     ("AUTH_API", "https://user.api.cryptic-game.net/"),
     ("DEVICE_API", "https://device.api.cryptic-game.net/"),
 
     # default (local)
-    #("AUTH_API", "http://localhost:1240/"),
-    #("DEVICE_API", "http://localhost:1241/")
+    # ("AUTH_API", "http://localhost:1240/"),
+    # ("DEVICE_API", "http://localhost:1241/")
 ]
 
 # the final configuration dict
@@ -46,5 +46,4 @@ for key in to_load:
 # set sqlalchemy database connection uri
 config["SQLALCHEMY_DATABASE_URI"]: str = \
     f"mysql+pymysql://{config['MYSQL_USERNAME']}:{config['MYSQL_PASSWORD']}@" \
-    f"{config['MYSQL_HOSTNAME']}:{config['MYSQL_PORT']}/{config['MYSQL_DATABASE']}"
-
+        f"{config['MYSQL_HOSTNAME']}:{config['MYSQL_PORT']}/{config['MYSQL_DATABASE']}"

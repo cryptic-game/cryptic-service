@@ -49,6 +49,7 @@ def register_namespaces() -> None:
 
     api.add_namespace(service_api)
 
+
 def setup_database() -> None:
     """
     Sets the database up.
@@ -60,7 +61,6 @@ def setup_database() -> None:
             break
         except Exception as e:
             sleep(2)
-
 
 
 def setup_development_environment() -> None:

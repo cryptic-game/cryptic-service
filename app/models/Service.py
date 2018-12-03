@@ -1,6 +1,7 @@
 from objects import db
 from uuid import uuid4
 import random
+import time
 
 
 class Service(db.Model):
@@ -11,6 +12,9 @@ class Service(db.Model):
     owner: db.Column = db.Column(db.String(32), nullable=False)
     name: db.Column = db.Column(db.String(32))
     running: db.Column = db.Column(db.Boolean)
+    action: db.Column = db.Column(db.Inteager)
+    target_service: db.Column = db.Column(db.String(32))
+    target_device: db.Column = db.Column(db.String(32))
 
     @property
     def serialize(self):
@@ -35,3 +39,16 @@ class Service(db.Model):
         db.session.commit()
 
         return service
+
+    def use(self, **kwargs):
+
+        if self.name is "Hydra":  # Hydra is the name of an pentest tool for SSH
+            if "target_service" in kwargs and "target_device" in kwargs:
+                target_ser: str = kwargs["target_service"]
+                target_dev: str = kwargs["target_device"]
+            else:
+                return None
+
+            self.action = time.time()
+            self.target_service = target_ser
+            self.target_device = target_dev

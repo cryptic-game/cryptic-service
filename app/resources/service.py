@@ -7,7 +7,10 @@ from models.Service import Service
 from objects import db
 from sqlalchemy import func
 from requests import get, post
+import requests.models.Response as Request
 from config import config
+import random
+import time
 
 PublicServiceResponseSchema = api.model("Public Service Response", {
     "uuid": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the uuid/address"),
@@ -41,7 +44,7 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(PublicServiceResponseSchema)
     @service_api.response(404, "Not Found", ErrorSchema)
     def get(self, device, uuid):
-        device_api_response : request = post(config["DEVICE_API"] + str(device) + "/").json()
+        device_api_response: Request = post(config["DEVICE_API"] + str(device) + "/").json()
 
         if device_api_response.status_code == 200:
             try:
@@ -55,6 +58,37 @@ class PublicServiceAPI(Resource):
         service: Optional[Service] = Service.query.filter_by(uuid=uuid, device=device).first()
 
         return service.serialize
+
+    # TODO: In Development
+    @service_api.doc("hacks a specific device")
+    @service_api.response(404, "Not Found", ErrorSchema)
+    @require_session
+    def post(self, session, device, uuid):
+        device_api_response: request = post(config["DEVICE_API"] + str(device) + "/").json()
+
+        if device_api_response.status_code == 200:
+            try:
+                if device_api_response["online"] != True:
+                    abort(400, "Device is not online or not service found")
+            except Exception:
+                abort(400, "invalid device uuid")
+        else:
+            abort(400, "device api is offline")
+
+        if "target_service" not in request.json or "target_device" not in request.json:
+            abort(404, "invalid request")
+
+        service: Optional[Service] = Service.query.filter_by(uuid=uuid, device=device).first()
+
+        if service.target_device == request.json["target_device"] and service.target_service == request.json[
+            "target_service"]:
+            pen_time: int = time.time() - service.action
+            if random.randint(int(-1 * (2 ** (-1 * (pen_time - 50000)))),
+                              1) == 1:  # TODO: Not happy with that need too mush resources
+                pass
+                # TODO: Return success and enter person temp als part owner for a specific time so hacker can use this device temp for his purpose
+
+        service.use(target_service=request.json["target_service"], target_device=request.json["target_device"])
 
 
 @service_api.route('/private/<string:device>/<string:uuid>/')
@@ -142,12 +176,13 @@ class PrivateDeviceModificationAPI(Resource):
         owner: str = session["owner"]
         name: str = request.json["name"]
 
-        available_services: List[str] = ["SSH", "Telnet"]
+        available_services: List[str] = ["SSH", "Telnet", "Hydra"]
 
         if name not in available_services:
             abort(404, "Service is not supported")
 
-        service_count : int = (db.session.query(func.count(Service.name)).filter(Service.owner == owner, Service.device == device)).first()[0]
+        service_count: int = \
+        (db.session.query(func.count(Service.name)).filter(Service.owner == owner, Service.device == device)).first()[0]
 
         if service_count != 0:
             abort(400, "you already own a service with the name " + name + " on this device")
