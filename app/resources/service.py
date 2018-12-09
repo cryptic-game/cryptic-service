@@ -7,7 +7,7 @@ from models.Service import Service
 from objects import db
 from sqlalchemy import func
 from requests import get, post
-import requests.models.Response as Request
+import requests.models
 from config import config
 import random
 import time
@@ -35,6 +35,19 @@ PrivateServicesResponseSchema = api.model("Private Services Resonse", {
 
 service_api = Namespace('service')
 
+def calculate_pos(waited_time : int) -> 'int':
+    """
+    :param waited_time: How long the user already penetrate the service
+    :return: chance that this brute force attack is successful (return , 1)
+    """
+
+    temp : int = waited_time - config["CHANCE"]
+
+    if temp > 0:
+        return 0
+    else:
+        return temp
+
 
 @service_api.route('/public/<string:device>/<string:uuid>/')
 @service_api.doc("Public Device Application Programming Interface")
@@ -44,7 +57,7 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(PublicServiceResponseSchema)
     @service_api.response(404, "Not Found", ErrorSchema)
     def get(self, device, uuid):
-        device_api_response: Request = post(config["DEVICE_API"] + str(device) + "/").json()
+        device_api_response: requests.models.Response = post(config["DEVICE_API"] + str(device) + "/").json()
 
         if device_api_response.status_code == 200:
             try:
@@ -59,9 +72,9 @@ class PublicServiceAPI(Resource):
 
         return service.serialize
 
-    # TODO: In Development
     @service_api.doc("hacks a specific device")
     @service_api.response(404, "Not Found", ErrorSchema)
+    @service_api.marshal_with(SuccessSchema)
     @require_session
     def post(self, session, device, uuid):
         device_api_response: request = post(config["DEVICE_API"] + str(device) + "/").json()
@@ -83,13 +96,18 @@ class PublicServiceAPI(Resource):
         if service.target_device == request.json["target_device"] and service.target_service == request.json[
             "target_service"]:
             pen_time: int = time.time() - service.action
-            if random.randint(int(-1 * (2 ** (-1 * (pen_time - 50000)))),
-                              1) == 1:  # TODO: Not happy with that need too mush resources
-                pass
-                # TODO: Return success and enter person temp als part owner for a specific time so hacker can use this device temp for his purpose
+            if random.randint(calculate_pos(int(pen_time)),1) == 1:
+
+                service.part_owner = session["owner"]
+
+                return {"ok": True}
+
+            else:
+                return {"ok":False}
 
         service.use(target_service=request.json["target_service"], target_device=request.json["target_device"])
 
+        return {"ok":True}
 
 @service_api.route('/private/<string:device>/<string:uuid>/')
 @service_api.doc("Private Device Application Programming Interface")
@@ -104,11 +122,11 @@ class PrivateDeviceAPI(Resource):
     def get(self, session, uuid_device, uuid_service):
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
-        if session["owner"] != service.owner:
-            abort(403, "no access to this service")
-
         if service is None:
             abort(404, "invalid service uuid")
+
+        if session["owner"] != service.owner and session["owner"] != service.part_owner:
+            abort(403, "no access to this service")
 
         return service.serialize
 
@@ -121,11 +139,11 @@ class PrivateDeviceAPI(Resource):
     def post(self, session, uuid_device, uuid_service):
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
-        if session["owner"] != service.owner:
-            abort(403, "no access to this service")
-
         if service is None:
             abort(404, "invalid service uuid")
+
+        if session["owner"] != service.owner and session["owner"] != service.part_owner:
+            abort(403, "no access to this service")
 
         service.running: bool = not service.running
         db.session.commit()
@@ -141,11 +159,11 @@ class PrivateDeviceAPI(Resource):
     def delete(self, session, uuid_device, uuid_service):
         service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
 
-        if session["owner"] != service.owner:
-            abort(403, "no access to this service")
-
         if service is None:
             abort(404, "invalid service uuid")
+
+        if session["owner"] != service.owner:
+            abort(403, "no access to this service")
 
         db.session.delete(service)
         db.session.commit()

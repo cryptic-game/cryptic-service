@@ -12,9 +12,10 @@ class Service(db.Model):
     owner: db.Column = db.Column(db.String(32), nullable=False)
     name: db.Column = db.Column(db.String(32))
     running: db.Column = db.Column(db.Boolean)
-    action: db.Column = db.Column(db.Inteager)
+    action: db.Column = db.Column(db.Integer)
     target_service: db.Column = db.Column(db.String(32))
     target_device: db.Column = db.Column(db.String(32))
+    part_owner: db.Column = db.Column(db.String(32))
 
     @property
     def serialize(self):
@@ -42,7 +43,7 @@ class Service(db.Model):
 
     def use(self, **kwargs):
 
-        if self.name is "Hydra":  # Hydra is the name of an pentest tool for SSH
+        if self.name is "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
             if "target_service" in kwargs and "target_device" in kwargs:
                 target_ser: str = kwargs["target_service"]
                 target_dev: str = kwargs["target_device"]

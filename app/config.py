@@ -28,6 +28,10 @@ to_load: Union[str, Tuple[str, bool]] = [
     # default (local)
     # ("AUTH_API", "http://localhost:1240/"),
     # ("DEVICE_API", "http://localhost:1241/")
+
+    # in game specific constants
+    ("CHANCE", 172800) # After 2 Days the chance that a hack is successful is 1/2
+
 ]
 
 # the final configuration dict
