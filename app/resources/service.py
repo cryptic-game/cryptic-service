@@ -8,7 +8,7 @@ from objects import db
 from sqlalchemy import func
 from requests import get, post
 import requests.models
-from config import config
+from vars import config
 import random
 import time
 
