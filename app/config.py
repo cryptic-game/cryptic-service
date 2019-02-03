@@ -13,7 +13,7 @@ to_load: Union[str, Tuple[str, bool]] = [
     ("MYSQL_PORT", 3306),
     ("MYSQL_DATABASE", "cryptic"),
     ("MYSQL_USERNAME", "cryptic"),
-    ("MYSQL_PASSWORD", "cryptic"),
+    ("MYSQL_PASSWORD", "cryptic"), # TODO CHANGE!
     ("SQLALCHEMY_TRACK_MODIFICATIONS", False),
 
     # flask-restplus
@@ -30,7 +30,7 @@ to_load: Union[str, Tuple[str, bool]] = [
     # ("DEVICE_API", "http://localhost:1241/")
 
     # in game specific constants
-    ("CHANCE", 172800) # After 2 Days the chance that a hack is successful is 1/2
+    ("CHANCE", 4*60) # After 4 minutes the chance that a hack is successful is 1/2
 
 ]
 

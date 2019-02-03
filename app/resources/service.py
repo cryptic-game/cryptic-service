@@ -50,7 +50,7 @@ def calculate_pos(waited_time : int) -> 'int':
 
 
 @service_api.route('/public/<string:device>/<string:uuid>/')
-@service_api.doc("Public Device Application Programming Interface")
+@service_api.doc("Public Service Application Programming Interface")
 class PublicServiceAPI(Resource):
 
     @service_api.doc("Get public information about a special service running on an given device")
@@ -82,7 +82,7 @@ class PublicServiceAPI(Resource):
         if device_api_response.status_code == 200:
             try:
                 if device_api_response["online"] != True:
-                    abort(400, "Device is not online or not service found")
+                    abort(400, "invalid device uuid")
             except Exception:
                 abort(400, "invalid device uuid")
         else:
@@ -100,10 +100,10 @@ class PublicServiceAPI(Resource):
 
                 service.part_owner = session["owner"]
 
-                return {"ok": True}
+                return {"ok": True, "access": True, "time": pen_time}
 
             else:
-                return {"ok":False}
+                return {"ok": True, "access": False, "time": pen_time}
 
         service.use(target_service=request.json["target_service"], target_device=request.json["target_device"])
 
@@ -208,3 +208,16 @@ class PrivateDeviceModificationAPI(Resource):
         service: Service = Service.create(owner, device, True)
 
         return service.serialize
+
+    @service_api.doc("Check if session owner is part owner")
+    @service_api.marshal_with(SuccessSchema)
+    @service_api.response(400, "Invalid Input", ErrorSchema)
+    @require_session
+    def post(self, session, device):
+        services: List[Service] = Service.query.filter_by(device=device).all()
+
+        for e in services:
+            if e.part_owner == session["owner"]:
+                return {"ok": True}
+
+        return {"ok": False}
