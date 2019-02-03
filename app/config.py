@@ -13,7 +13,7 @@ to_load: Union[str, Tuple[str, bool]] = [
     ("MYSQL_PORT", 3306),
     ("MYSQL_DATABASE", "cryptic"),
     ("MYSQL_USERNAME", "cryptic"),
-    ("MYSQL_PASSWORD", "cryptic"),
+    ("MYSQL_PASSWORD", "cryptic"), # TODO CHANGE!
     ("SQLALCHEMY_TRACK_MODIFICATIONS", False),
 
     # flask-restplus
@@ -22,9 +22,16 @@ to_load: Union[str, Tuple[str, bool]] = [
 
     # other apis
     # default (online)
-    ("AUTH_API", "https://user.api.cryptic-game.net/")
+    ("AUTH_API", "https://user.api.cryptic-game.net/"),
+    ("DEVICE_API", "https://device.api.cryptic-game.net/"),
+
     # default (local)
-    # ("AUTH_API", "http://localhost:1240/")
+    # ("AUTH_API", "http://localhost:1240/"),
+    # ("DEVICE_API", "http://localhost:1241/")
+
+    # in game specific constants
+    ("CHANCE", 4*60) # After 4 minutes the chance that a hack is successful is 1/2
+
 ]
 
 # the final configuration dict
@@ -43,4 +50,4 @@ for key in to_load:
 # set sqlalchemy database connection uri
 config["SQLALCHEMY_DATABASE_URI"]: str = \
     f"mysql+pymysql://{config['MYSQL_USERNAME']}:{config['MYSQL_PASSWORD']}@" \
-    f"{config['MYSQL_HOSTNAME']}:{config['MYSQL_PORT']}/{config['MYSQL_DATABASE']}"
+        f"{config['MYSQL_HOSTNAME']}:{config['MYSQL_PORT']}/{config['MYSQL_DATABASE']}"
