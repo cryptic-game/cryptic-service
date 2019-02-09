@@ -34,7 +34,7 @@ class Service(db.Model):
 
         uuid = str(uuid4()).replace("-", "")
 
-        service = Service(uuid=uuid, user=user, device=device, running=running)
+        service = Service(uuid=uuid, owner=user, device=device, running=running)
 
         db.session.add(service)
         db.session.commit()
