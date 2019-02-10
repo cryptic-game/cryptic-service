@@ -10,7 +10,7 @@ class Service(db.Model):
     uuid: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
     device: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
     owner: db.Column = db.Column(db.String(32), nullable=False)
-    name: db.Column = db.Column(db.String(32))
+    name: db.Column = db.Column(db.String(32), nullable=False)
     running: db.Column = db.Column(db.Boolean)
     action: db.Column = db.Column(db.Integer)
     target_service: db.Column = db.Column(db.String(32))
@@ -23,7 +23,7 @@ class Service(db.Model):
         return self.__dict__
 
     @staticmethod
-    def create(user: str, device: str, running: bool) -> 'Service':
+    def create(user: str, device: str, name: str, running: bool) -> 'Service':
         """
         Creates a new service.
         :param user: The owner's uuid
@@ -34,7 +34,7 @@ class Service(db.Model):
 
         uuid = str(uuid4()).replace("-", "")
 
-        service = Service(uuid=uuid, owner=user, device=device, running=running)
+        service = Service(uuid=uuid, owner=user, device=device, name=name, running=running)
 
         db.session.add(service)
         db.session.commit()

@@ -49,7 +49,7 @@ def calculate_pos(waited_time : int) -> 'int':
         return temp
 
 
-@service_api.route('/public/<string:device>/<string:uuid>/')
+@service_api.route('/public/<string:device>/<string:uuid>')
 @service_api.doc("Public Service Application Programming Interface")
 class PublicServiceAPI(Resource):
 
@@ -57,7 +57,7 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(PublicServiceResponseSchema)
     @service_api.response(404, "Not Found", ErrorSchema)
     def get(self, device, uuid):
-        device_api_response: requests.models.Response = post(config["DEVICE_API"] + str(device) + "/").json()
+        device_api_response: requests.models.Response = post(config["DEVICE_API"] + "public/" + str(device)).json()
 
         if device_api_response.status_code == 200:
             try:
@@ -77,7 +77,7 @@ class PublicServiceAPI(Resource):
     @service_api.marshal_with(SuccessSchema)
     @require_session
     def post(self, session, device, uuid):
-        device_api_response: request = post(config["DEVICE_API"] + str(device) + "/").json()
+        device_api_response: request = post(config["DEVICE_API"] + "public/" + str(device)).json()
 
         if device_api_response.status_code == 200:
             try:
@@ -109,7 +109,7 @@ class PublicServiceAPI(Resource):
 
         return {"ok":True}
 
-@service_api.route('/private/<string:device>/<string:uuid>/')
+@service_api.route('/private/<string:device>/<string:uuid>')
 @service_api.doc("Private Device Application Programming Interface")
 class PrivateDeviceAPI(Resource):
 
@@ -171,7 +171,7 @@ class PrivateDeviceAPI(Resource):
         return {"ok": True}
 
 
-@service_api.route('/private/<string:device>/')
+@service_api.route('/private/<string:device>')
 @service_api.doc("Private Device Application Programming Interface for Modifications")
 class PrivateDeviceModificationAPI(Resource):
 
@@ -205,7 +205,7 @@ class PrivateDeviceModificationAPI(Resource):
         if service_count != 0:
             abort(400, "you already own a service with the name " + name + " on this device")
 
-        service: Service = Service.create(owner, device, True)
+        service: Service = Service.create(owner, device, name, True)
 
         return service.serialize
 
