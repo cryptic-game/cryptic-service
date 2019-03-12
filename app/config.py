@@ -30,7 +30,7 @@ to_load: Union[str, Tuple[str, bool]] = [
     # ("DEVICE_API", "http://localhost:1241/")
 
     # in game specific constants
-    ("CHANCE", 4*60) # After 4 minutes the chance that a hack is successful is 1/2
+    ("CHANCE", 60)
 
 ]
 

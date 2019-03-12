@@ -42,14 +42,18 @@ class Service(db.Model):
         return service
 
     def use(self, **kwargs):
-
-        if self.name is "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
+        
+        if self.name == "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
             if "target_service" in kwargs and "target_device" in kwargs:
                 target_ser: str = kwargs["target_service"]
                 target_dev: str = kwargs["target_device"]
             else:
                 return None
 
+            print(target_ser, target_dev)
+
             self.action = time.time()
             self.target_service = target_ser
             self.target_device = target_dev
+
+            db.session.commit()

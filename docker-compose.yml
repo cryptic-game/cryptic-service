@@ -8,7 +8,6 @@ services:
     ports:
         - "3306:3306"
     environment:
-        MYSQL_ROOT_HOST: '%'
         MYSQL_USER: cryptic
         MYSQL_PASSWORD: cryptic  # TODO pick a secure password
         MYSQL_DATABASE: cryptic

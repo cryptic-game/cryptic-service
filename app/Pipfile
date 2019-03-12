@@ -13,6 +13,8 @@ gunicorn = "*"
 flask-restplus = "*"
 flask-bcrypt = "*"
 requests = "*"
+mysql-connector-python = "*"
+cryptography = "*"
 
 [dev-packages]
 

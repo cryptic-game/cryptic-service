@@ -8,7 +8,7 @@ from objects import db
 from sqlalchemy import func
 from requests import get, post
 import requests.models
-from vars import config
+from config import config
 import random
 import time
 
@@ -41,12 +41,7 @@ def calculate_pos(waited_time : int) -> 'int':
     :return: chance that this brute force attack is successful (return , 1)
     """
 
-    temp : int = waited_time - config["CHANCE"]
-
-    if temp > 0:
-        return 0
-    else:
-        return temp
+    return waited_time / config["CHANCE"]
 
 
 @service_api.route('/public/<string:device>/<string:uuid>')
@@ -74,14 +69,15 @@ class PublicServiceAPI(Resource):
 
     @service_api.doc("hacks a specific device")
     @service_api.response(404, "Not Found", ErrorSchema)
-    @service_api.marshal_with(SuccessSchema)
     @require_session
     def post(self, session, device, uuid):
-        device_api_response: request = post(config["DEVICE_API"] + "public/" + str(device)).json()
+        url = config["DEVICE_API"] + "device/public/" + str(device)
+
+        device_api_response = post(url)
 
         if device_api_response.status_code == 200:
             try:
-                if device_api_response["online"] != True:
+                if device_api_response.json()["online"] != True:
                     abort(400, "invalid device uuid")
             except Exception:
                 abort(400, "invalid device uuid")
@@ -95,19 +91,26 @@ class PublicServiceAPI(Resource):
 
         if service.target_device == request.json["target_device"] and service.target_service == request.json[
             "target_service"]:
+            target_service: Optional[Service] = Service.query.filter_by(uuid=request.json["target_service"], device=request.json["target_device"]).first()
             pen_time: int = time.time() - service.action
-            if random.randint(calculate_pos(int(pen_time)),1) == 1:
 
-                service.part_owner = session["owner"]
+            print(calculate_pos(int(pen_time)))
+
+            service.use(target_service=None, target_device=None)
+
+            random_value = random.random() + 0.1
+
+            if random_value < calculate_pos(int(pen_time)):
+                target_service.part_owner = session["owner"]
+                db.session.commit()
 
                 return {"ok": True, "access": True, "time": pen_time}
-
             else:
                 return {"ok": True, "access": False, "time": pen_time}
 
         service.use(target_service=request.json["target_service"], target_device=request.json["target_device"])
 
-        return {"ok":True}
+        return {"ok": True}
 
 @service_api.route('/private/<string:device>/<string:uuid>')
 @service_api.doc("Private Device Application Programming Interface")
