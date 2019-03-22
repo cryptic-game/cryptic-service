@@ -1,5 +1,5 @@
 # In game specific stuff
 
-config : dict = {
-    ("CHANCE",172600)
+config: dict = {
+    ("CHANCE", 172600)
 }
