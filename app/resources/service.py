@@ -9,6 +9,7 @@ from objects import session
 
 from sqlalchemy import func
 
+#
 
 def calculate_pos(waited_time: int) -> 'int':
     """
@@ -66,7 +67,7 @@ def private_info(data: dict, user : str) -> dict:
     if service is None:
         return invalid_request
 
-    if data["owner"] != service.owner and data["owner"] != service.part_owner:
+    if user != service.owner and user != service.part_owner:
         return permission_denied
 
     service.running: bool = not service.running
