@@ -1,29 +1,35 @@
-from objects import db
+from objects import session, Base, engine
 from uuid import uuid4
 import random
 import time
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import MetaData
+
+metadata = MetaData()
 
 
-class Service(db.Model):
+class Service(Base):
     __tablename__: str = "service"
 
-    uuid: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
-    device: db.Column = db.Column(db.String(32), primary_key=True, unique=True)
-    owner: db.Column = db.Column(db.String(32), nullable=False)
-    name: db.Column = db.Column(db.String(32))
-    running: db.Column = db.Column(db.Boolean)
-    action: db.Column = db.Column(db.Integer)
-    target_service: db.Column = db.Column(db.String(32))
-    target_device: db.Column = db.Column(db.String(32))
-    part_owner: db.Column = db.Column(db.String(32))
+    uuid: Column = Column(String(32), primary_key=True, unique=True)
+    device: Column = Column(String(32), primary_key=True, unique=True)
+    owner: Column = Column(String(32), nullable=False)
+    name: Column = Column(String(32))
+    running: Column = Column(Boolean)
+    action: Column = Column(Integer)
+    target_service: Column = Column(String(32))
+    target_device: Column = Column(String(32))
+    part_owner: Column = Column(String(32))
 
     @property
     def serialize(self):
         _ = self.uuid
-        return self.__dict__
+        mydict = self.__dict__
+        del (mydict['_sa_instance_state'])
+        return mydict
 
     @staticmethod
-    def create(user: str, device: str, running: bool) -> 'Service':
+    def create(user: str, device: str, name: str, running: bool) -> 'Service':
         """
         Creates a new service.
         :param user: The owner's uuid
@@ -34,10 +40,10 @@ class Service(db.Model):
 
         uuid = str(uuid4()).replace("-", "")
 
-        service = Service(uuid=uuid, user=user, device=device, running=running)
+        service = Service(uuid=uuid, owner=user, device=device, running=running, name=name)
 
-        db.session.add(service)
-        db.session.commit()
+        session.add(service)
+        session.commit()
 
         return service
 
@@ -53,3 +59,6 @@ class Service(db.Model):
             self.action = time.time()
             self.target_service = target_ser
             self.target_device = target_dev
+
+
+metadata.create_all(bind=engine)
