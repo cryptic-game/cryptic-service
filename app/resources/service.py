@@ -1,6 +1,5 @@
 from typing import Optional, List
 from models.Service import Service
-from config import config
 import random
 import time
 import cryptic
@@ -12,8 +11,6 @@ from objects import *
 from vars import config
 
 
-#
-
 def calculate_pos(waited_time: int) -> 'int':
     """
     :param waited_time: How long the user already penetrate the service
@@ -24,16 +21,16 @@ def calculate_pos(waited_time: int) -> 'int':
 
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"], device=data["device_uuid"]).first()
-    return service.serialize  # TODO
+    return service.serialize  # TODO Change what is see able
 
 
 def hack(data: dict, user: str) -> dict:
     if "target_device" not in data:
         return invalid_request
 
-    # data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
-    data_return: dict = {"exist": True}
-    if data_return["exist"] is False:
+    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
+
+    if "exist" not in data or data_return["exist"] is False:
         return device_does_not_exsist
 
     if "target_service" not in data:
@@ -198,3 +195,5 @@ def handle_mircoservice_requests(data):
         return part_owner(data, data["user_uuid"])
 
     return unknown_endpoint
+
+m : cryptic.MicroService = cryptic.MicroService('service', handle, handle_mircoservice_requests)

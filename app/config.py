@@ -17,3 +17,6 @@ for key in to_load:
             config[key[0]] = key[1]
     elif key in os.environ:
         config[key] = os.environ.get(key)
+
+if config["storage_location"] is None: # Just in case
+    config["storage_location"] = "./test_db.db"
