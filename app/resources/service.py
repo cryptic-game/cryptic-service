@@ -20,7 +20,8 @@ def calculate_pos(waited_time: int) -> 'int':
 
 
 def public_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"], device=data["device_uuid"]).first()
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                  device=data["device_uuid"]).first()
     return service.serialize  # TODO Change what is see able
 
 
@@ -160,7 +161,7 @@ def handle(endpoint: List[str], data: dict, user: str) -> dict:
     print(endpoint, data)
     # device_api_response: requests.models.Response = post(config["DEVICE_API"] + "public/" + str(device)).json()
     if len(endpoint) == 0:
-        return {"error":"specify an endpoint"}
+        return {"error": "specify an endpoint"}
 
     if endpoint[0] == "public_info":
         return public_info(data, user)
@@ -196,4 +197,5 @@ def handle_mircoservice_requests(data):
 
     return unknown_endpoint
 
-m : cryptic.MicroService = cryptic.MicroService('service', handle, handle_mircoservice_requests)
+
+m: cryptic.MicroService = cryptic.MicroService('service', handle, handle_mircoservice_requests)
