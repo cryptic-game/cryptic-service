@@ -5,21 +5,19 @@ import time
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy import MetaData
 
-metadata = MetaData()
-
 
 class Service(Base):
     __tablename__: str = "service"
 
-    uuid: Column = Column(String(32), primary_key=True, unique=True)
-    device: Column = Column(String(32), primary_key=True, unique=True)
-    owner: Column = Column(String(32), nullable=False)
+    uuid: Column = Column(String(36), primary_key=True, unique=True)
+    device: Column = Column(String(36), primary_key=True, unique=True)
+    owner: Column = Column(String(36), nullable=False)
     name: Column = Column(String(32))
     running: Column = Column(Boolean)
     action: Column = Column(Integer)
-    target_service: Column = Column(String(32))
-    target_device: Column = Column(String(32))
-    part_owner: Column = Column(String(32))
+    target_service: Column = Column(String(36))
+    target_device: Column = Column(String(36))
+    part_owner: Column = Column(String(36))
 
     @property
     def serialize(self):
@@ -61,4 +59,4 @@ class Service(Base):
             self.target_device = target_dev
 
 
-metadata.create_all(bind=engine)
+Base.metadata.create_all(engine)

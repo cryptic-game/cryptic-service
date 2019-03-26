@@ -3,14 +3,6 @@ cryptic-service
 
 The official service microservice of Cryptic (https://cryptic-game.net/).
 
-## Testing with Docker
-
-If you want to test this microservice you can simply build and run a 
-container with docker-compose:
-
-`docker-compose up -d`
-
-
 ## Testing with pipenv
 
 You can also test it without docker using pipenv:

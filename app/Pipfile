@@ -4,11 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Flask-SQLAlchemy = "*"
 SQLAlchemy = "*"
 PyMySQL = "*"
 gunicorn = "*"
-requests = "*"
 microservicecryp = "*"
 
 [dev-packages]
