@@ -23,10 +23,7 @@ def calculate_pos(waited_time: int) -> 'int':
 
 
 def public_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
-
-
-                                                                  device=data["device_uuid"]).first()
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"], device=data["device_uuid"]).first()
     return service.serialize  # TODO
 
 
