@@ -2,7 +2,7 @@ import os
 from typing import Union, Tuple
 
 to_load: Union[str, Tuple[str, bool]] = [
-    ("storage_location", None)
+    ("STORAGE_LOCATION", "data/")
 ]
 
 # the final configuration dict
