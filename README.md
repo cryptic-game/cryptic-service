@@ -23,6 +23,7 @@ This microservice is online on docker-hub (https://hub.docker.com/r/useto/crypti
 
 ## API Documentation
 
+Go here to read the [documentation](https://github.com/cryptic-game/cryptic-service/wiki)
 
 
 |Endpoint       | Data              | Functionality |
@@ -34,4 +35,4 @@ This microservice is online on docker-hub (https://hub.docker.com/r/useto/crypti
 |delete         |                   | deletes service
 |list           |                   | lists services on device
 |part_owner     |                   | checks if you temporary part owner of this service
-|hack           |                   | Bruteforce SSH
+|bruteforce     |                   | Bruteforce SSH
