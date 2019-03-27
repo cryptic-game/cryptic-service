@@ -4,11 +4,11 @@ import random
 import time
 import cryptic
 from schemes import *
-from objects import session
-from uuid import uuid4
 from sqlalchemy import func
 from objects import *
 from vars import config
+from objects import session
+from uuid import uuid4
 
 
 def calculate_pos(waited_time: int) -> 'int':
@@ -22,7 +22,9 @@ def calculate_pos(waited_time: int) -> 'int':
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
-    return service.serialize  # TODO Change what is see able
+    if service.running_port is None and (service.owner != user or service.part_owner != user):
+        return unknown_service
+    return service.public_data()
 
 
 def hack(data: dict, user: str) -> dict:
@@ -31,7 +33,7 @@ def hack(data: dict, user: str) -> dict:
 
     data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
 
-    if "exist" not in data or data_return["exist"] is False:
+    if "exist" not in data_return or data_return["exist"] is False:
         return device_does_not_exsist
 
     if "target_service" not in data:
@@ -39,13 +41,18 @@ def hack(data: dict, user: str) -> dict:
 
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
+    target_service: Optional[Service] = session.query(Service).filter_by(uuid=data["target_service"],
+                                                                         device=data["target_device"]).first()
+
+    if target_service.running is False or target_service.running_port is None or \
+            config["services"][target_service.name]["allow_remote_access"] is False:
+        return unknown_service
 
     if service.target_device == data["target_device"] and service.target_service == data["target_service"]:
-        target_service: Optional[Service] = session.query(Service).filter_by(uuid=data["target_service"],
-                                                                             device=data["target_device"]).first()
-        pen_time: int = time.time() - service.action
 
-        service.use(target_service=None, target_device=None)
+        pen_time: float = time.time() - service.action
+
+        service.use(data)
 
         random_value: float = random.random() + 0.1
 
@@ -57,7 +64,7 @@ def hack(data: dict, user: str) -> dict:
         else:
             return {"ok": True, "access": False, "time": pen_time}
 
-    service.use(target_service=data["target_service"], target_device=data["target_device"])
+    service.use(data)
 
     return success_scheme
 
@@ -71,9 +78,6 @@ def private_info(data: dict, user: str) -> dict:
 
     if user != service.owner and user != service.part_owner:
         return permission_denied
-
-    service.running: bool = not service.running
-    session.commit()
 
     return service.serialize
 
@@ -91,6 +95,7 @@ def turnoff_on(data: dict, user: str) -> dict:
         return permission_denied
 
     service.running: bool = not service.running
+    session.commit()
 
     return service.serialize
 
@@ -124,9 +129,7 @@ def create(data: dict, user: str) -> dict:
     owner: str = user
     name: str = data["name"]
 
-    available_services: List[str] = ["SSH", "Telnet", "Hydra", "nmap"]
-
-    if name not in available_services:
+    if name not in config["services"].keys():
         return service_is_not_supported
 
     service_count: int = \
@@ -145,7 +148,9 @@ def part_owner(data: dict, user: str) -> dict:
     services: List[Service] = session.query(Service).filter_by(device=data["device_uuid"]).all()
 
     for e in services:
-        if e.part_owner == user:
+        print(e.part_owner, user, e.running_port)
+        if e.part_owner == user and e.running_port != None and config["services"][e.name][
+            "allow_remote_access"] is True:
             return success_scheme
 
     return {"ok": False}
@@ -190,7 +195,7 @@ def handle(endpoint: List[str], data: dict, user: str) -> dict:
     return unknown_endpoint
 
 
-def handle_mircoservice_requests(data):
+def handle_mircoservice_requests(data: dict) -> dict:
     """ all this requests are trusted"""
     if data["endpoint"] == "check_part_owner":
         return part_owner(data, data["user_uuid"])
