@@ -1,7 +1,5 @@
 from typing import Optional, List
 from models.Service import Service
-import random
-import time
 import cryptic
 from schemes import *
 from sqlalchemy import func
@@ -9,6 +7,12 @@ from objects import *
 from vars import config
 from objects import session
 from uuid import uuid4
+import resources.game_content as game_content
+
+switch: dict = {  # This is just for Tools
+    "Hydra": game_content.bruteforce,
+    "nmap": game_content.nmap
+}
 
 
 def calculate_pos(waited_time: int) -> 'int':
@@ -27,46 +31,18 @@ def public_info(data: dict, user: str) -> dict:
     return service.public_data()
 
 
-def hack(data: dict, user: str) -> dict:
-    if "target_device" not in data:
-        return invalid_request
-
-    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
-
-    if "exist" not in data_return or data_return["exist"] is False:
-        return device_does_not_exsist
-
-    if "target_service" not in data:
+def use(data: dict, user: str) -> dict:
+    if "device_uuid" not in data or "service_uuid" not in data:
         return invalid_request
 
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
-    target_service: Optional[Service] = session.query(Service).filter_by(uuid=data["target_service"],
-                                                                         device=data["target_device"]).first()
 
-    if target_service.running is False or target_service.running_port is None or \
-            config["services"][target_service.name]["allow_remote_access"] is False:
+    if service is None or (
+            part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is False and service.owner != user):
         return unknown_service
 
-    if service.target_device == data["target_device"] and service.target_service == data["target_service"]:
-
-        pen_time: float = time.time() - service.action
-
-        service.use(data)
-
-        random_value: float = random.random() + 0.1
-
-        if random_value < calculate_pos(int(pen_time)):
-            target_service.part_owner: str = user
-            session.commit()
-
-            return {"ok": True, "access": True, "time": pen_time}
-        else:
-            return {"ok": True, "access": False, "time": pen_time}
-
-    service.use(data)
-
-    return success_scheme
+    return switch[service.name](data, user)
 
 
 def private_info(data: dict, user: str) -> dict:
@@ -132,9 +108,15 @@ def create(data: dict, user: str) -> dict:
     if name not in config["services"].keys():
         return service_is_not_supported
 
+    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
+
+    if "exist" not in data_return or data_return["exist"] is False:
+        return device_does_not_exsist
+
     service_count: int = \
         (session.query(func.count(Service.name)).filter(Service.owner == owner,
-                                                        Service.device == data["device_uuid"])).first()[0]
+                                                        Service.device == data["device_uuid"],
+                                                        Service.name == name)).first()[0]
 
     if service_count != 0:
         return multiple_services
@@ -148,8 +130,7 @@ def part_owner(data: dict, user: str) -> dict:
     services: List[Service] = session.query(Service).filter_by(device=data["device_uuid"]).all()
 
     for e in services:
-        print(e.part_owner, user, e.running_port)
-        if e.part_owner == user and e.running_port != None and config["services"][e.name][
+        if e.part_owner == user and e.running_port is not None and config["services"][e.name][
             "allow_remote_access"] is True:
             return success_scheme
 
@@ -171,9 +152,6 @@ def handle(endpoint: List[str], data: dict, user: str) -> dict:
     if endpoint[0] == "public_info":
         return public_info(data, user)
 
-    elif endpoint[0] == "bruteforce":
-        return hack(data, user)
-
     elif endpoint[0] == "private_info":
         return private_info(data, user)
 
@@ -191,6 +169,9 @@ def handle(endpoint: List[str], data: dict, user: str) -> dict:
 
     elif endpoint[0] == "part_owner":
         return part_owner(data, user)
+
+    elif endpoint[0] == "use":
+        return use(data, user)
 
     return unknown_endpoint
 

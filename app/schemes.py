@@ -12,4 +12,4 @@ device_does_not_exsist: dict = {"error": "this device does not exist"}
 
 unknown_endpoint: dict = {"error": "unknown endpoint"}
 
-unknown_service : dict = {"error": "unknown service"}
+unknown_service: dict = {"error": "unknown service"}
