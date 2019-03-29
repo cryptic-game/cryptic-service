@@ -59,7 +59,6 @@ def private_info(data: dict, user: str) -> dict:
 
 
 def turnoff_on(data: dict, user: str) -> dict:
-    session: Session = Session()
 
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
@@ -67,13 +66,17 @@ def turnoff_on(data: dict, user: str) -> dict:
     if service is None:
         return invalid_request
 
-    if user != service.owner and user != service.part_owner:
+    if user != service.owner:
         return permission_denied
 
     service.running: bool = not service.running
+    service.action = None
+    service.target_service : str = ""
+    service.target_device : str = ""
+
     session.commit()
 
-    return service.serialize
+    return {"ok":True}
 
 
 def delete_service(data: dict, user: str) -> dict:
@@ -97,7 +100,7 @@ def list_services(data: dict, user: str) -> dict:
                                                                device=data["device_uuid"]).all()
 
     return {
-        "services": [e.serialize for e in services]
+        "services": [e.serialize for e in services if e.owner == user]
     }
 
 
@@ -108,7 +111,11 @@ def create(data: dict, user: str) -> dict:
     if name not in config["services"].keys():
         return service_is_not_supported
 
-    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["target_device"]})
+    if "device_uuid" not in  data:
+        return invalid_request
+
+    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["device_uuid"]})
+
 
     if "exist" not in data_return or data_return["exist"] is False:
         return device_does_not_exsist
