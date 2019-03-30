@@ -8,7 +8,7 @@ service_is_not_supported: dict = {"error": "this service is not supported"}
 
 permission_denied: dict = {"error": "permission denied"}
 
-device_does_not_exsist: dict = {"error": "this device does not exist"}
+device_does_not_exist: dict = {"error": "this device does not exist"}
 
 unknown_endpoint: dict = {"error": "unknown endpoint"}
 

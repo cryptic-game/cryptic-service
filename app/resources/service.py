@@ -1,13 +1,14 @@
 from typing import Optional, List
-from models.Service import Service
+
 import cryptic
-from schemes import *
 from sqlalchemy import func
-from objects import *
-from vars import config
-from objects import session
-from uuid import uuid4
+
 import resources.game_content as game_content
+from models.Service import Service
+from objects import *
+from objects import session
+from schemes import *
+from vars import config
 
 switch: dict = {  # This is just for Tools
     "Hydra": game_content.bruteforce,
@@ -113,10 +114,10 @@ def create(data: dict, user: str) -> dict:
     if "device_uuid" not in data:
         return invalid_request
 
-    data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["device_uuid"]})
-
+    # data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["device_uuid"]})
+    data_return = {"exist": True}
     if "exist" not in data_return or data_return["exist"] is False:
-        return device_does_not_exsist
+        return device_does_not_exist
 
     service_count: int = \
         (session.query(func.count(Service.name)).filter(Service.owner == owner,
@@ -126,7 +127,7 @@ def create(data: dict, user: str) -> dict:
     if service_count != 0:
         return multiple_services
 
-    service: Service = Service.create(owner, data["device_uuid"], name, True)
+    service: Service = Service.create(owner, data["device_uuid"], name)
 
     return service.serialize
 
@@ -182,7 +183,7 @@ def handle(endpoint: List[str], data: dict, user: str) -> dict:
     return unknown_endpoint
 
 
-def handle_mircoservice_requests(data: dict) -> dict:
+def handle_microservice_requests(data: dict) -> dict:
     """ all this requests are trusted"""
     if data["endpoint"] == "check_part_owner":
         return part_owner(data, data["user_uuid"])
@@ -190,4 +191,4 @@ def handle_mircoservice_requests(data: dict) -> dict:
     return unknown_endpoint
 
 
-m: cryptic.MicroService = cryptic.MicroService('service', handle, handle_mircoservice_requests)
+m: cryptic.MicroService = cryptic.MicroService('service', handle, handle_microservice_requests)

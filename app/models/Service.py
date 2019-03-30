@@ -1,8 +1,9 @@
-from objects import session, Base, engine
-from uuid import uuid4
 import time
+from uuid import uuid4
+
 from sqlalchemy import Column, Integer, String, Boolean
-from sqlalchemy import MetaData
+
+from objects import session, Base, engine
 from vars import config
 
 
@@ -36,13 +37,12 @@ class Service(Base):
         return mydict
 
     @staticmethod
-    def create(user: str, device: str, name: str, running: bool) -> 'Service':
+    def create(user: str, device: str, name: str) -> 'Service':
         """
         Creates a new service.
         :param name:
         :param user: The owner's uuid
         :param device: devices uuid
-        :param running: service running
         :return: New DeviceModel
         """
 
