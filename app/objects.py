@@ -5,7 +5,7 @@ from sqlalchemy.engine.base import Engine
 from config import config
 
 
-uri: str = 'sqlite:///' + config["STORAGE_LOCATION"]
+uri: str = 'sqlite:///' + config["STORAGE_LOCATION"] + "service.db"
 
 engine: Engine = create_engine(uri)
 
