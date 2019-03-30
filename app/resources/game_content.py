@@ -20,7 +20,6 @@ def bruteforce(data: dict, user: str) -> dict:
         return invalid_request
 
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
-                                                                  # Evt we can optimize this that we dont have to query twice
                                                                   device=data["device_uuid"]).first()
     target_service: Optional[Service] = session.query(Service).filter_by(uuid=data["target_service"],
                                                                          device=data["target_device"]).first()

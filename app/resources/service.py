@@ -59,7 +59,6 @@ def private_info(data: dict, user: str) -> dict:
 
 
 def turnoff_on(data: dict, user: str) -> dict:
-
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
 
@@ -71,12 +70,12 @@ def turnoff_on(data: dict, user: str) -> dict:
 
     service.running: bool = not service.running
     service.action = None
-    service.target_service : str = ""
-    service.target_device : str = ""
+    service.target_service: str = ""
+    service.target_device: str = ""
 
     session.commit()
 
-    return {"ok":True}
+    return {"ok": True}
 
 
 def delete_service(data: dict, user: str) -> dict:
@@ -111,11 +110,10 @@ def create(data: dict, user: str) -> dict:
     if name not in config["services"].keys():
         return service_is_not_supported
 
-    if "device_uuid" not in  data:
+    if "device_uuid" not in data:
         return invalid_request
 
     data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["device_uuid"]})
-
 
     if "exist" not in data_return or data_return["exist"] is False:
         return device_does_not_exsist
@@ -147,6 +145,7 @@ def part_owner(data: dict, user: str) -> dict:
 def handle(endpoint: List[str], data: dict, user: str) -> dict:
     """
     This function just forwards the data to the responsible function.
+    :param user:
     :param endpoint:
     :param data:
     :return:

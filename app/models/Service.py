@@ -39,6 +39,7 @@ class Service(Base):
     def create(user: str, device: str, name: str, running: bool) -> 'Service':
         """
         Creates a new service.
+        :param name:
         :param user: The owner's uuid
         :param device: devices uuid
         :param running: service running
