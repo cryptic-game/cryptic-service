@@ -15,6 +15,7 @@ switch: dict = {  # This is just for Tools
     "nmap": game_content.nmap
 }
 
+m: cryptic.MicroService = cryptic.MicroService(name = 'service')
 
 def calculate_pos(waited_time: int) -> 'int':
     """
@@ -23,7 +24,7 @@ def calculate_pos(waited_time: int) -> 'int':
     """
     return waited_time / config["CHANCE"]
 
-
+@m.user_endpoint(path = ["public_info"])
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
@@ -31,7 +32,7 @@ def public_info(data: dict, user: str) -> dict:
         return unknown_service
     return service.public_data()
 
-
+@m.user_endpoint(path = ["use"])
 def use(data: dict, user: str) -> dict:
     if "device_uuid" not in data or "service_uuid" not in data:
         return invalid_request
@@ -45,7 +46,7 @@ def use(data: dict, user: str) -> dict:
 
     return switch[service.name](data, user)
 
-
+@m.user_endpoint(path = ["private_info"])
 def private_info(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
@@ -58,7 +59,7 @@ def private_info(data: dict, user: str) -> dict:
 
     return service.serialize
 
-
+@m.user_endpoint(path = ["turn_off_on"])
 def turnoff_on(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                   device=data["device_uuid"]).first()
@@ -78,7 +79,7 @@ def turnoff_on(data: dict, user: str) -> dict:
 
     return {"ok": True}
 
-
+@m.user_endpoint(path = ["delete"])
 def delete_service(data: dict, user: str) -> dict:
     service: Optional[Service] = session.query(Service).filter(uuid=data["service_uuid"],
                                                                device=data["device_uuid"]).first()
@@ -94,7 +95,7 @@ def delete_service(data: dict, user: str) -> dict:
 
     return {"ok": True}
 
-
+@m.user_endpoint(path = ["list"])
 def list_services(data: dict, user: str) -> dict:
     services: List[Service] = session.query(Service).filter_by(owner=user,
                                                                device=data["device_uuid"]).all()
@@ -103,7 +104,7 @@ def list_services(data: dict, user: str) -> dict:
         "services": [e.serialize for e in services if e.owner == user]
     }
 
-
+@m.user_endpoint(path = ["create"])
 def create(data: dict, user: str) -> dict:
     owner: str = user
     name: str = data["name"]
@@ -114,8 +115,8 @@ def create(data: dict, user: str) -> dict:
     if "device_uuid" not in data:
         return invalid_request
 
-    # data_return: dict = m.wait_for_response("device", {"endpoint": "exists", "device_uuid": data["device_uuid"]})
-    data_return = {"exist": True}
+    data_return: dict = m.contact_microservice("device", ["exist"],{"device_uuid": data["device_uuid"]})
+
     if "exist" not in data_return or data_return["exist"] is False:
         return device_does_not_exist
 
@@ -131,7 +132,7 @@ def create(data: dict, user: str) -> dict:
 
     return service.serialize
 
-
+@m.user_endpoint(path = ["part_owner"])
 def part_owner(data: dict, user: str) -> dict:
     services: List[Service] = session.query(Service).filter_by(device=data["device_uuid"]).all()
 
@@ -143,52 +144,7 @@ def part_owner(data: dict, user: str) -> dict:
     return {"ok": False}
 
 
-def handle(endpoint: List[str], data: dict, user: str) -> dict:
-    """
-    This function just forwards the data to the responsible function.
-    :param user:
-    :param endpoint:
-    :param data:
-    :return:
-    """
-    print(endpoint, data)
-    # device_api_response: requests.models.Response = post(config["DEVICE_API"] + "public/" + str(device)).json()
-    if len(endpoint) == 0:
-        return {"error": "specify an endpoint"}
-
-    if endpoint[0] == "public_info":
-        return public_info(data, user)
-
-    elif endpoint[0] == "private_info":
-        return private_info(data, user)
-
-    elif endpoint[0] == "turn":
-        return turnoff_on(data, user)
-
-    elif endpoint[0] == "delete":
-        return delete_service(data, user)
-
-    elif endpoint[0] == "list":
-        return list_services(data, user)
-
-    elif endpoint[0] == "create":
-        return create(data, user)
-
-    elif endpoint[0] == "part_owner":
-        return part_owner(data, user)
-
-    elif endpoint[0] == "use":
-        return use(data, user)
-
-    return unknown_endpoint
-
-
-def handle_microservice_requests(data: dict) -> dict:
+@m.microservice_endpoint(path = ["check_part_owner"])
+def handle_microservice_requests(data: dict, microservice: str) -> dict:
     """ all this requests are trusted"""
-    if data["endpoint"] == "check_part_owner":
-        return part_owner(data, data["user_uuid"])
-
-    return unknown_endpoint
-
-
-m: cryptic.MicroService = cryptic.MicroService('service', handle, handle_microservice_requests)
+    return part_owner(data, data["user_uuid"])

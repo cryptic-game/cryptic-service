@@ -7,6 +7,8 @@ from config import config
 
 uri: str = 'sqlite:///' + config["STORAGE_LOCATION"] + "service.db"
 
+# uri : str = 'mysql://user:password@localhost/database'
+
 engine: Engine = create_engine(uri)
 
 Session = sessionmaker(bind=engine)
