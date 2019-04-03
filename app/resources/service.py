@@ -1,226 +1,151 @@
-from flask_restplus import Namespace, Resource, fields, abort
-from basics import ErrorSchema, require_session, SuccessSchema
-from objects import api
-from flask import request
 from typing import Optional, List
-from models.Service import Service
-from objects import db
+
+import cryptic
 from sqlalchemy import func
-from requests import get, post
-import requests.models
-from config import config
-import random
-import time
 
-PublicServiceResponseSchema = api.model("Public Service Response", {
-    "uuid": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the uuid/address"),
-    "name": fields.String(example="SSH", description="the name of the running service"),
-    "owner": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the owner's uuid/address"),
-    "device": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="Devices uuid")
-})
+import resources.game_content as game_content
+from models.Service import Service
+from objects import *
+from objects import session
+from schemes import *
+from vars import config
 
-PrivateServiceResponseSchema = api.model("Private Service Response", {
-    "uuid": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the uuid/address"),
-    "name": fields.String(example="asterix", description="the name/alias"),
-    "owner": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the owner's uuid/address"),
-    "running": fields.Boolean(example=True, description="if the service is running"),
-    "device": fields.String(example="12abc34d5efg67hi89j1klm2nop3pqrs", description="the device's uuid")
-})
+switch: dict = {  # This is just for Tools
+    "Hydra": game_content.bruteforce,
+    "nmap": game_content.nmap
+}
 
-PrivateServicesResponseSchema = api.model("Private Services Resonse", {
-    "services": fields.List(fields.Nested(PrivateServiceResponseSchema),
-                            example="[{},{}]",
-                            description="list of running services on an given device")
-})
-
-service_api = Namespace('service')
-
-def calculate_pos(waited_time : int) -> 'int':
-    """
-    :param waited_time: How long the user already penetrate the service
-    :return: chance that this brute force attack is successful (return , 1)
-    """
-
-    return waited_time / config["CHANCE"]
+m: cryptic.MicroService = cryptic.MicroService(name='service')
 
 
-@service_api.route('/public/<string:device>/<string:uuid>')
-@service_api.doc("Public Service Application Programming Interface")
-class PublicServiceAPI(Resource):
-
-    @service_api.doc("Get public information about a special service running on an given device")
-    @service_api.marshal_with(PublicServiceResponseSchema)
-    @service_api.response(404, "Not Found", ErrorSchema)
-    def get(self, device, uuid):
-        device_api_response: requests.models.Response = post(config["DEVICE_API"] + "public/" + str(device)).json()
-
-        if device_api_response.status_code == 200:
-            try:
-                if device_api_response["online"] != True:
-                    abort(400, "Device is not online or not service found")
-            except Exception:
-                abort(400, "invalid device uuid")
-        else:
-            abort(400, "device api is offline")
-
-        service: Optional[Service] = Service.query.filter_by(uuid=uuid, device=device).first()
-
-        return service.serialize
-
-    @service_api.doc("hacks a specific device")
-    @service_api.response(404, "Not Found", ErrorSchema)
-    @require_session
-    def post(self, session, device, uuid):
-        url = config["DEVICE_API"] + "device/public/" + str(device)
-
-        device_api_response = post(url)
-
-        if device_api_response.status_code == 200:
-            try:
-                if device_api_response.json()["online"] != True:
-                    abort(400, "invalid device uuid")
-            except Exception:
-                abort(400, "invalid device uuid")
-        else:
-            abort(400, "device api is offline")
-
-        if "target_service" not in request.json or "target_device" not in request.json:
-            abort(404, "invalid request")
-
-        service: Optional[Service] = Service.query.filter_by(uuid=uuid, device=device).first()
-
-        if service.target_device == request.json["target_device"] and service.target_service == request.json[
-            "target_service"]:
-            target_service: Optional[Service] = Service.query.filter_by(uuid=request.json["target_service"], device=request.json["target_device"]).first()
-            pen_time: int = time.time() - service.action
-
-            print(calculate_pos(int(pen_time)))
-
-            service.use(target_service=None, target_device=None)
-
-            random_value = random.random() + 0.1
-
-            if random_value < calculate_pos(int(pen_time)):
-                target_service.part_owner = session["owner"]
-                db.session.commit()
-
-                return {"ok": True, "access": True, "time": pen_time}
-            else:
-                return {"ok": True, "access": False, "time": pen_time}
-
-        service.use(target_service=request.json["target_service"], target_device=request.json["target_device"])
-
-        return {"ok": True}
-
-@service_api.route('/private/<string:device>/<string:uuid>')
-@service_api.doc("Private Device Application Programming Interface")
-class PrivateDeviceAPI(Resource):
-
-    @service_api.doc("Get private information about the service")
-    @service_api.marshal_with(PrivateServiceResponseSchema)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @service_api.response(403, "No Access", ErrorSchema)
-    @service_api.response(404, "Not Found", ErrorSchema)
-    @require_session
-    def get(self, session, uuid_device, uuid_service):
-        service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
-
-        if service is None:
-            abort(404, "invalid service uuid")
-
-        if session["owner"] != service.owner and session["owner"] != service.part_owner:
-            abort(403, "no access to this service")
-
-        return service.serialize
-
-    @service_api.doc("Turn the service on/off")
-    @service_api.marshal_with(PrivateServiceResponseSchema)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @service_api.response(403, "No Access", ErrorSchema)
-    @service_api.response(404, "Not Found", ErrorSchema)
-    @require_session
-    def post(self, session, uuid_device, uuid_service):
-        service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
-
-        if service is None:
-            abort(404, "invalid service uuid")
-
-        if session["owner"] != service.owner and session["owner"] != service.part_owner:
-            abort(403, "no access to this service")
-
-        service.running: bool = not service.running
-        db.session.commit()
-
-        return service.serialize
-
-    @service_api.doc("Delete a service")
-    @service_api.marshal_with(SuccessSchema)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @service_api.response(403, "No Access", ErrorSchema)
-    @service_api.response(404, "Not Found", ErrorSchema)
-    @require_session
-    def delete(self, session, uuid_device, uuid_service):
-        service: Optional[Service] = Service.query.filter_by(uuid=uuid_service, device=uuid_device).first()
-
-        if service is None:
-            abort(404, "invalid service uuid")
-
-        if session["owner"] != service.owner:
-            abort(403, "no access to this service")
-
-        db.session.delete(service)
-        db.session.commit()
-
-        return {"ok": True}
+@m.user_endpoint(path=["public_info"])
+def public_info(data: dict, user: str) -> dict:
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                  device=data["device_uuid"]).first()
+    if service.running_port is None and (service.owner != user or service.part_owner != user):
+        return unknown_service
+    return service.public_data()
 
 
-@service_api.route('/private/<string:device>')
-@service_api.doc("Private Device Application Programming Interface for Modifications")
-class PrivateDeviceModificationAPI(Resource):
+@m.user_endpoint(path=["use"])
+def use(data: dict, user: str) -> dict:
+    if "device_uuid" not in data or "service_uuid" not in data:
+        return invalid_request
 
-    @service_api.doc("Get all services on an given device")
-    @service_api.marshal_with(PrivateServicesResponseSchema, as_list=True)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @require_session
-    def get(self, session, device):
-        services: List[Service] = Service.query.filter_by(owner=session["owner"], device=device).all()
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                  device=data["device_uuid"]).first()
 
-        return {
-            "services": [e.serialize for e in services]
-        }
+    if service is None or (
+            part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is False and service.owner != user):
+        return unknown_service
 
-    @service_api.doc("Create a service on an given device")
-    @service_api.marshal_with(PrivateServiceResponseSchema)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @require_session
-    def put(self, session, device):
-        owner: str = session["owner"]
-        name: str = request.json["name"]
+    return switch[service.name](data, user)
 
-        available_services: List[str] = ["SSH", "Telnet", "Hydra"]
 
-        if name not in available_services:
-            abort(404, "Service is not supported")
+@m.user_endpoint(path=["private_info"])
+def private_info(data: dict, user: str) -> dict:
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                  device=data["device_uuid"]).first()
 
-        service_count: int = \
-        (db.session.query(func.count(Service.name)).filter(Service.owner == owner, Service.device == device)).first()[0]
+    if service is None:
+        return invalid_request
 
-        if service_count != 0:
-            abort(400, "you already own a service with the name " + name + " on this device")
+    if user != service.owner and user != service.part_owner:
+        return permission_denied
 
-        service: Service = Service.create(owner, device, name, True)
+    return service.serialize
 
-        return service.serialize
 
-    @service_api.doc("Check if session owner is part owner")
-    @service_api.marshal_with(SuccessSchema)
-    @service_api.response(400, "Invalid Input", ErrorSchema)
-    @require_session
-    def post(self, session, device):
-        services: List[Service] = Service.query.filter_by(device=device).all()
+@m.user_endpoint(path=["turn_off_on"])
+def turnoff_on(data: dict, user: str) -> dict:
+    service: Optional[Service] = session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                  device=data["device_uuid"]).first()
 
-        for e in services:
-            if e.part_owner == session["owner"]:
-                return {"ok": True}
+    if service is None:
+        return invalid_request
 
-        return {"ok": False}
+    if user != service.owner:
+        return permission_denied
+
+    service.running: bool = not service.running
+    service.action = None
+    service.target_service: str = ""
+    service.target_device: str = ""
+
+    session.commit()
+
+    return {"ok": True}
+
+
+@m.user_endpoint(path=["delete"])
+def delete_service(data: dict, user: str) -> dict:
+    service: Optional[Service] = session.query(Service).filter(uuid=data["service_uuid"],
+                                                               device=data["device_uuid"]).first()
+
+    if service is None:
+        return invalid_request
+
+    if user != service.owner:
+        return permission_denied
+
+    session.delete(service)
+    session.commit()
+
+    return {"ok": True}
+
+
+@m.user_endpoint(path=["list"])
+def list_services(data: dict, user: str) -> dict:
+    services: List[Service] = session.query(Service).filter_by(owner=user,
+                                                               device=data["device_uuid"]).all()
+
+    return {
+        "services": [e.serialize for e in services if e.owner == user]
+    }
+
+
+@m.user_endpoint(path=["create"])
+def create(data: dict, user: str) -> dict:
+    owner: str = user
+    name: str = data["name"]
+
+    if name not in config["services"].keys():
+        return service_is_not_supported
+
+    if "device_uuid" not in data:
+        return invalid_request
+
+    data_return: dict = m.contact_microservice("device", ["exist"], {"device_uuid": data["device_uuid"]})
+
+    if "exist" not in data_return or data_return["exist"] is False:
+        return device_does_not_exist
+
+    service_count: int = \
+        (session.query(func.count(Service.name)).filter(Service.owner == owner,
+                                                        Service.device == data["device_uuid"],
+                                                        Service.name == name)).first()[0]
+
+    if service_count != 0:
+        return multiple_services
+
+    service: Service = Service.create(owner, data["device_uuid"], name)
+
+    return service.serialize
+
+
+@m.user_endpoint(path=["part_owner"])
+def part_owner(data: dict, user: str) -> dict:
+    services: List[Service] = session.query(Service).filter_by(device=data["device_uuid"]).all()
+
+    for e in services:
+        if e.part_owner == user and e.running_port is not None and \
+                config["services"][e.name]["allow_remote_access"] is True:
+            return success_scheme
+
+    return {"ok": False}
+
+
+@m.microservice_endpoint(path=["check_part_owner"])
+def handle_microservice_requests(data: dict, microservice: str) -> dict:
+    """ all this requests are trusted"""
+    return part_owner(data, data["user_uuid"])

@@ -162,3 +162,4 @@ venv.bak/
 Pipfile.lock
 data/
 app/Pipfile.lock
+./idea/
