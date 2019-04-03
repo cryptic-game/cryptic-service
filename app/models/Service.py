@@ -1,4 +1,6 @@
 import time
+from typing import NoReturn
+from typing import Union
 from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, Boolean
@@ -7,34 +9,24 @@ from objects import session, Base, engine
 from vars import config
 
 
-def calculate_pos(waited_time: int) -> 'int':
-    """
-    :param waited_time: How long the user already penetrate the service
-    :return: chance that this brute force attack is successful (return , 1)
-    """
-    return waited_time / config["CHANCE"]
-
-
 class Service(Base):
     __tablename__: str = "service"
 
-    uuid: Column = Column(String(36), primary_key=True, unique=True)
-    device: Column = Column(String(36))
-    owner: Column = Column(String(36), nullable=False)
-    name: Column = Column(String(32))
-    running: Column = Column(Boolean)
-    action: Column = Column(Integer)
-    target_service: Column = Column(String(36))
-    target_device: Column = Column(String(36))
-    part_owner: Column = Column(String(36))
-    running_port: Column = Column(Integer)
+    uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
+    device: Union[Column, str] = Column(String(36))
+    owner: Union[Column, str] = Column(String(36), nullable=False)
+    name: Union[Column, str] = Column(String(32))
+    running: Union[Column, bool] = Column(Boolean)
+    action: Union[Column, int] = Column(Integer)
+    target_service: Union[Column, str] = Column(String(36))
+    target_device: Union[Column, str] = Column(String(36))
+    part_owner: Union[Column, str] = Column(String(36))
+    running_port: Union[Column, int] = Column(Integer)
 
     @property
     def serialize(self):
         _ = self.uuid
-        mydict = self.__dict__
-        # del (mydict['_sa_instance_state'])
-        return mydict
+        return self.__dict__
 
     @staticmethod
     def create(user: str, device: str, name: str) -> 'Service':
@@ -57,9 +49,8 @@ class Service(Base):
 
         return service
 
-    def use(self, data: dict) -> None:
+    def use(self, data: dict) -> NoReturn:
         if self.name == "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
-
             self.target_service: str = data["target_service"]
             self.target_device: str = data["target_device"]
             self.action: int = int(time.time())

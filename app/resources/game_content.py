@@ -1,13 +1,14 @@
-from schemes import *
-from vars import config
-from typing import Optional, List
-from objects import session
 import random
 import time
+from typing import Optional, List
+
 from models.Service import Service
+from objects import session
+from schemes import *
+from vars import config
 
 
-def calculate_pos(waited_time: int) -> 'int':
+def calculate_pos(waited_time: int) -> int:
     """
     :param waited_time: How long the user already penetrate the service
     :return: chance that this brute force attack is successful (return , 1)
