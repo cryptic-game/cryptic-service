@@ -3,7 +3,7 @@ from typing import Tuple, Union, List
 
 to_load: List[Union[Tuple[str,str],Tuple[str,int]]] = [
     ("MYSQL_HOSTNAME", "localhost"),
-    ("MYSQL_PORT", 3308),
+    ("MYSQL_PORT", 3306),
     ("MYSQL_DATABASE", "crytpic"),
     ("MYSQL_USERNAME", "cryptic"),
     ("MYSQL_PASSWORD", "cryptic"),
