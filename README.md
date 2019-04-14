@@ -29,8 +29,8 @@ Go here to read the [documentation](https://github.com/cryptic-game/cryptic-serv
 |Endpoint       | Data              | Functionality |
 |---------      | ----------        |-------------- |
 |create         |                   | create new service
-|public_info    |                   | public info about an given service
-|private_info   |                   | private info about an given service
+|public_info    |                   | public info about a given service
+|private_info   |                   | private info about a given service
 |turn           |                   | turns service on/off
 |delete         |                   | deletes service
 |list           |                   | lists services on device
