@@ -50,7 +50,7 @@ class Service(wrapper.Base):
         return service
 
     def use(self, data: dict) -> NoReturn:
-        if self.name == "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
+        if self.name == "brutef4ce":
             self.target_service: str = data["target_service"]
             self.target_device: str = data["target_device"]
             self.action: int = int(time.time())
