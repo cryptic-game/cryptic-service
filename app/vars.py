@@ -14,12 +14,12 @@ config: dict = {
             "exploit_able": False,
             "allow_remote_access": False,
         },
-        "nmap": {
+        "portscan": {
             "default_port": None,
             "exploit_able": False,
             "allow_remote_access": False,
         },
-        "Telnet": {
+        "brute4ce": {
             "default_port": 23,
             "exploit_able": True,
             "allow_remote_access": True,
