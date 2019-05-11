@@ -5,11 +5,11 @@ from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, Boolean
 
-from objects import session, Base, engine
+from app import wrapper
 from vars import config
 
 
-class Service(Base):
+class Service(wrapper.Base):
     __tablename__: str = "service"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
@@ -44,13 +44,13 @@ class Service(Base):
 
         service = Service(uuid=uuid, owner=user, device=device, running=True, name=name, running_port=default_port)
 
-        session.add(service)
-        session.commit()
+        wrapper.session.add(service)
+        wrapper.session.commit()
 
         return service
 
     def use(self, data: dict) -> NoReturn:
-        if self.name == "Hydra":  # Hydra is the name of an brute force tool for SSH (but now for all services)
+        if self.name == "brutef4ce":
             self.target_service: str = data["target_service"]
             self.target_device: str = data["target_device"]
             self.action: int = int(time.time())
@@ -59,4 +59,4 @@ class Service(Base):
         return {"uuid": self.uuid, "name": self.name, "running_port": self.running_port, "device": self.device}
 
 
-Base.metadata.create_all(engine)
+wrapper.Base.metadata.create_all(wrapper.engine)
