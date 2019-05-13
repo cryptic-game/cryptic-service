@@ -25,8 +25,12 @@ class Service(wrapper.Base):
 
     @property
     def serialize(self):
-        _ = self.uuid
-        return self.__dict__
+        _: str = self.uuid
+        d: dict = self.__dict__
+
+        del d['_sa_instance_state']
+
+        return d
 
     @staticmethod
     def create(user: str, device: str, name: str) -> 'Service':
