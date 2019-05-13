@@ -1,11 +1,9 @@
 from typing import Optional, List
 
-import cryptic
+from app import m, wrapper
 from sqlalchemy import func
-
 import resources.game_content as game_content
 from models.Service import Service
-from app import wrapper
 from schemes import *
 from vars import config
 
@@ -13,8 +11,6 @@ switch: dict = {  # This is just for Tools
     "brute4ce": game_content.bruteforce,
     "portscan": game_content.nmap
 }
-
-m: cryptic.MicroService = cryptic.MicroService(name='service')
 
 
 @m.user_endpoint(path=["public_info"])
