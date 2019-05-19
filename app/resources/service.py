@@ -9,7 +9,7 @@ from vars import config
 
 switch: dict = {  # This is just for Tools
     "brute4ce": game_content.bruteforce,
-    "portscan": game_content.nmap
+    "portscan": game_content.portscan
 }
 
 
@@ -34,7 +34,7 @@ def use(data: dict, user: str) -> dict:
                                                                           device=data["device_uuid"]).first()
 
     if service is None or (
-            part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is False and service.owner != user):
+            not game_content.part_owner(data["device_uuid"], user) and service.owner != user):
         return unknown_service
 
     return switch[service.name](data, user)
@@ -108,20 +108,19 @@ def list_services(data: dict, user: str) -> dict:
     if "device_uuid" not in data:
         return invalid_request
 
-    data_return: dict = m.contact_microservice("device", ["exist"], {"device_uuid": data["device_uuid"]})
+    data_return: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
 
-    if part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is True:
-
-        services: List[Service] = wrapper.session.query(Service).filter_by(
-            device=data["device_uuid"]).all()
-
-    elif user == data_return["owner"]:
-
-        services: List[Service] = wrapper.session.query(Service).filter_by(
-            device=data["device_uuid"]).all()
-
+    if "owner" in data_return:
+        if game_content.part_owner(data["device_uuid"], user):
+            services: List[Service] = wrapper.session.query(Service).filter_by(
+                device=data["device_uuid"]).all()
+        elif user == data_return["owner"]:
+            services: List[Service] = wrapper.session.query(Service).filter_by(
+                device=data["device_uuid"]).all()
+        else:
+            return permission_denied
     else:
-        return permission_denied
+        device_does_not_exist
 
     return {
         "services": [e.serialize for e in services]
@@ -146,7 +145,7 @@ def create(data: dict, user: str) -> dict:
 
     data_owner: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
 
-    if data_owner["owner"] != user or part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is False:
+    if data_owner["owner"] != user and not game_content.part_owner(data["device_uuid"], user):
         return permission_denied
 
     service_count: int = \
@@ -163,14 +162,10 @@ def create(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["part_owner"])
 def part_owner(data: dict, user: str) -> dict:
-    services: List[Service] = wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
+    if "device_uuid" not in data:
+        invalid_request
 
-    for e in services:
-        if e.part_owner == user and e.running_port is not None and \
-                config["services"][e.name]["allow_remote_access"] is True:
-            return success_scheme
-
-    return {"ok": False}
+    return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
 
 @m.microservice_endpoint(path=["check_part_owner"])
