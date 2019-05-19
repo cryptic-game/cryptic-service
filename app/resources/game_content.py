@@ -30,7 +30,6 @@ def bruteforce(data: dict, user: str) -> dict:
         return unknown_service
 
     if service.target_device == data["target_device"] and service.target_service == data["target_service"]:
-
         pen_time: float = time.time() - service.action
 
         service.use(data)
@@ -44,7 +43,6 @@ def bruteforce(data: dict, user: str) -> dict:
             return {"ok": True, "access": True, "time": pen_time}
         else:
             return {"ok": True, "access": False, "time": pen_time}
-
     else:
         service.use(data)
 
