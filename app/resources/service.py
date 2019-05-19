@@ -15,9 +15,12 @@ switch: dict = {  # This is just for Tools
 
 @m.user_endpoint(path=["public_info"])
 def public_info(data: dict, user: str) -> dict:
+    if "service_uuid" not in data or "device_uuid" not in data:
+        return invalid_request
+
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
-    if service.running_port is None and (service.owner != user or service.part_owner != user):
+    if service is None or service.running_port is None:
         return unknown_service
     return service.public_data()
 
@@ -39,6 +42,9 @@ def use(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["private_info"])
 def private_info(data: dict, user: str) -> dict:
+    if "service_uuid" not in data or "device_uuid" not in data:
+        return invalid_request
+
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
 
@@ -53,6 +59,9 @@ def private_info(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["turn_off_on"])
 def turnoff_on(data: dict, user: str) -> dict:
+    if "service_uuid" not in data or "device_uuid" not in data:
+        return invalid_request
+
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
 
@@ -74,13 +83,18 @@ def turnoff_on(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["delete"])
 def delete_service(data: dict, user: str) -> dict:
+    if "service_uuid" not in data or "device_uuid" not in data:
+        return invalid_request
+
     service: Optional[Service] = wrapper.session.query(Service).filter(uuid=data["service_uuid"],
                                                                        device=data["device_uuid"]).first()
 
     if service is None:
         return invalid_request
 
-    if user != service.owner:
+    data_owner: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
+
+    if user != data_owner["owner"]:
         return permission_denied
 
     wrapper.session.delete(service)
@@ -91,11 +105,26 @@ def delete_service(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["list"])
 def list_services(data: dict, user: str) -> dict:
-    services: List[Service] = wrapper.session.query(Service).filter_by(owner=user,
-                                                                       device=data["device_uuid"]).all()
+    if "device_uuid" not in data:
+        return invalid_request
+
+    data_return: dict = m.contact_microservice("device", ["exist"], {"device_uuid": data["device_uuid"]})
+
+    if part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is True:
+
+        services: List[Service] = wrapper.session.query(Service).filter_by(
+            device=data["device_uuid"]).all()
+
+    elif user == data_return["owner"]:
+
+        services: List[Service] = wrapper.session.query(Service).filter_by(
+            device=data["device_uuid"]).all()
+
+    else:
+        return permission_denied
 
     return {
-        "services": [e.serialize for e in services if e.owner == user]
+        "services": [e.serialize for e in services]
     }
 
 
@@ -115,11 +144,15 @@ def create(data: dict, user: str) -> dict:
     if "exist" not in data_return or data_return["exist"] is False:
         return device_does_not_exist
 
+    data_owner: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
+
+    if data_owner["owner"] != user or part_owner({"device_uuid": data["device_uuid"]}, user)["ok"] is False:
+        return permission_denied
+
     service_count: int = \
         (wrapper.session.query(func.count(Service.name)).filter(Service.owner == owner,
                                                                 Service.device == data["device_uuid"],
                                                                 Service.name == name)).first()[0]
-
     if service_count != 0:
         return multiple_services
 
