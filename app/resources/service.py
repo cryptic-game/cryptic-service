@@ -120,7 +120,7 @@ def list_services(data: dict, user: str) -> dict:
         else:
             return permission_denied
     else:
-        device_does_not_exist
+        return device_does_not_exist
 
     return {
         "services": [e.serialize for e in services]
@@ -163,7 +163,7 @@ def create(data: dict, user: str) -> dict:
 @m.user_endpoint(path=["part_owner"])
 def part_owner(data: dict, user: str) -> dict:
     if "device_uuid" not in data:
-        invalid_request
+        return invalid_request
 
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 

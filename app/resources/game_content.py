@@ -64,7 +64,7 @@ def portscan(data: dict, user: str) -> dict:
     return {"services": return_data}
 
 
-def part_owner(device: str, user: str) -> dict:
+def part_owner(device: str, user: str) -> bool:
     services: List[Service] = wrapper.session.query(Service).filter_by(device=device).all()
 
     for e in services:
