@@ -49,7 +49,7 @@ def bruteforce(data: dict, user: str) -> dict:
         return success_scheme
 
 
-def nmap(data: dict, user: str) -> dict:
+def portscan(data: dict, user: str) -> dict:
     if "target_service" not in data and "target_device" not in data:
         return unknown_service
 
@@ -62,3 +62,14 @@ def nmap(data: dict, user: str) -> dict:
             return_data.append(service.public_data())
 
     return {"services": return_data}
+
+
+def part_owner(device: str, user: str) -> bool:
+    services: List[Service] = wrapper.session.query(Service).filter_by(device=device).all()
+
+    for e in services:
+        if e.part_owner == user and e.running_port is not None and \
+                config["services"][e.name]["allow_remote_access"] is True:
+            return True
+
+    return False
