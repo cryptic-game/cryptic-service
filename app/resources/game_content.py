@@ -36,6 +36,11 @@ def bruteforce(data: dict, user: str) -> dict:
 
         random_value: float = random.random() + 0.1
 
+        service.target_service = None
+        service.target_device = None
+        service.action = None
+        wrapper.session.commit()
+
         if random_value < calculate_pos(int(pen_time)):
             target_service.part_owner: str = user
             wrapper.session.commit()
