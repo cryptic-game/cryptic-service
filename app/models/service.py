@@ -26,7 +26,7 @@ class Service(wrapper.Base):
     @property
     def serialize(self):
         _: str = self.uuid
-        d: dict = self.__dict__
+        d: dict = self.__dict__.copy()
 
         del d['_sa_instance_state']
 

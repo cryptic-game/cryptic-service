@@ -2,7 +2,7 @@ import random
 import time
 from typing import Optional, List
 
-from models.Service import Service
+from models.service import Service
 from schemes import *
 from vars import config
 from app import wrapper
