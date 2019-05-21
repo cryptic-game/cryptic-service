@@ -1,9 +1,10 @@
 from typing import Optional, List
 
-from app import m, wrapper
 from sqlalchemy import func
+
 import resources.game_content as game_content
-from models.Service import Service
+from app import m, wrapper
+from models.service import Service
 from schemes import *
 from vars import config
 
@@ -112,11 +113,9 @@ def list_services(data: dict, user: str) -> dict:
 
     if "owner" in data_return:
         if game_content.part_owner(data["device_uuid"], user):
-            services: List[Service] = wrapper.session.query(Service).filter_by(
-                device=data["device_uuid"]).all()
+            services: List[Service] = wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
         elif user == data_return["owner"]:
-            services: List[Service] = wrapper.session.query(Service).filter_by(
-                device=data["device_uuid"]).all()
+            services: List[Service] = wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
         else:
             return permission_denied
     else:

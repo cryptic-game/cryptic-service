@@ -54,7 +54,7 @@ fabric.properties
 .idea/httpRequests
 ### PyCharm Patch ###
 # Comment Reason: 
-https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
+# https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
 # *.iml
 # modules.xml
 # .idea/misc.xml
@@ -152,14 +152,11 @@ venv.bak/
 ### Python Patch ###
 .venv/
 # End of https://www.gitignore.io/api/python
-.idea/modules.xml
-.idea/misc.xml
-.idea/backend.xml
-.idea/inspectionProfiles/profiles_settings.xml
-#This Project
+
+### This Project ###
 .idea
 .lock
 Pipfile.lock
 data/
 app/Pipfile.lock
-./idea/
+idea/
