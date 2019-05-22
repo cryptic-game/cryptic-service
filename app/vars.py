@@ -1,7 +1,7 @@
 # In game specific stuff
 
 config: dict = {
-    "CHANCE": 20000,
+    "CHANCE": 20,
 
     "services": {
         "ssh": {
