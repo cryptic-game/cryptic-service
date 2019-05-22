@@ -3,7 +3,7 @@ from typing import Optional, List
 from app import m, wrapper
 from sqlalchemy import func
 import resources.game_content as game_content
-from models.Service import Service
+from models.service import Service
 from schemes import *
 from vars import config
 
