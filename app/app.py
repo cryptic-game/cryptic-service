@@ -7,6 +7,7 @@ m: MicroService = MicroService('service')
 wrapper: DatabaseWrapper = m.get_wrapper()
 
 if __name__ == '__main__':
+    # noinspection PyUnresolvedReferences
     from resources.service import *
 
     wrapper.Base.metadata.create_all(bind=wrapper.engine)

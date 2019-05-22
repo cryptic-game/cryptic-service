@@ -26,7 +26,7 @@ class Service(wrapper.Base):
     @property
     def serialize(self):
         _: str = self.uuid
-        d: dict = self.__dict__
+        d: dict = self.__dict__.copy()
 
         del d['_sa_instance_state']
 
@@ -54,7 +54,7 @@ class Service(wrapper.Base):
         return service
 
     def use(self, data: dict) -> NoReturn:
-        if self.name == "brutef4ce":
+        if self.name == "brute4ce":
             self.target_service: str = data["target_service"]
             self.target_device: str = data["target_device"]
             self.action: int = int(time.time())

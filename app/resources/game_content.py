@@ -2,7 +2,7 @@ import random
 import time
 from typing import Optional, List
 
-from models.Service import Service
+from models.service import Service
 from schemes import *
 from vars import config
 from app import wrapper
@@ -36,13 +36,20 @@ def bruteforce(data: dict, user: str) -> dict:
 
         random_value: float = random.random() + 0.1
 
+        target_device: str = service.target_device
+
+        service.target_device = None
+        service.target_service = None
+        service.action = None
+        wrapper.session.commit()
+
         if random_value < calculate_pos(int(pen_time)):
             target_service.part_owner: str = user
             wrapper.session.commit()
 
-            return {"ok": True, "access": True, "time": pen_time}
+            return {"ok": True, "access": True, "time": pen_time, "target_device": target_device}
         else:
-            return {"ok": True, "access": False, "time": pen_time}
+            return {"ok": True, "access": False, "time": pen_time, "target_device": target_device}
     else:
         service.use(data)
 
