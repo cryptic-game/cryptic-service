@@ -168,4 +168,4 @@ def part_owner(data: dict, user: str) -> dict:
 @m.microservice_endpoint(path=["check_part_owner"])
 def handle_microservice_requests(data: dict, microservice: str) -> dict:
     """ all this requests are trusted"""
-    return part_owner(data, data["user_uuid"])
+    return part_owner(data["device_uuid"], data["user_uuid"])
