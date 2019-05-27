@@ -9,7 +9,7 @@ config: dict = {
             "exploit_able": True,
             "allow_remote_access": True,
         },
-        "brute4ce": {
+        "bruteforce": {
             "default_port": None,
             "exploit_able": False,
             "allow_remote_access": False,
