@@ -7,8 +7,8 @@ from models.service import Service
 from schemes import *
 from vars import config
 
-switch: dict = {  # This is just for Tools
-    "brute4ce": game_content.bruteforce,
+switch: dict = {  # This is just for Tools its an more smooth way of an "switch" statement
+    "bruteforce": game_content.bruteforce,
     "portscan": game_content.portscan
 }
 
