@@ -2,10 +2,10 @@ import random
 import time
 from typing import Optional, List
 
+from app import wrapper
 from models.service import Service
 from schemes import *
 from vars import config
-from app import wrapper
 
 
 def calculate_pos(waited_time: int) -> int:
@@ -57,7 +57,7 @@ def bruteforce(data: dict, user: str) -> dict:
 
 
 def portscan(data: dict, user: str) -> dict:
-    if "target_service" not in data and "target_device" not in data:
+    if "target_device" not in data:
         return unknown_service
 
     services: List[Service] = wrapper.session.query(Service).filter_by(device=data["target_device"]).all()

@@ -9,6 +9,7 @@ cryptic-game = "*"
 argparse = "*"
 cryptography = "*"
 PyMySQL = "*"
+scheme = "*"
 
 [dev-packages]
 
