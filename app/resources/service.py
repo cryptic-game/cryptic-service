@@ -1,8 +1,10 @@
 from typing import Optional, List
 
-from app import m, wrapper
+from scheme import UUID, Text
 from sqlalchemy import func
+
 import resources.game_content as game_content
+from app import m, wrapper
 from models.service import Service
 from schemes import *
 from vars import config
@@ -13,11 +15,11 @@ switch: dict = {  # This is just for Tools its an more smooth way of an "switch"
 }
 
 
-@m.user_endpoint(path=["public_info"])
+@m.user_endpoint(path=["public_info"], requires={
+    "device_uuid": UUID(),
+    "service_uuid": UUID()
+})
 def public_info(data: dict, user: str) -> dict:
-    if "service_uuid" not in data or "device_uuid" not in data:
-        return invalid_request
-
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
     if service is None or service.running_port is None:
@@ -25,7 +27,7 @@ def public_info(data: dict, user: str) -> dict:
     return service.public_data()
 
 
-@m.user_endpoint(path=["use"])
+@m.user_endpoint(path=["use"], requires=None)
 def use(data: dict, user: str) -> dict:
     if "device_uuid" not in data or "service_uuid" not in data:
         return invalid_request
@@ -40,11 +42,11 @@ def use(data: dict, user: str) -> dict:
     return switch[service.name](data, user)
 
 
-@m.user_endpoint(path=["private_info"])
+@m.user_endpoint(path=["private_info"], requires={
+    "device_uuid": UUID(),
+    "service_uuid": UUID()
+})
 def private_info(data: dict, user: str) -> dict:
-    if "service_uuid" not in data or "device_uuid" not in data:
-        return invalid_request
-
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
 
@@ -57,11 +59,11 @@ def private_info(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["turn_off_on"])
+@m.user_endpoint(path=["turn_off_on"], requires={
+    "device_uuid": UUID(),
+    "service_uuid": UUID()
+})
 def turnoff_on(data: dict, user: str) -> dict:
-    if "service_uuid" not in data or "device_uuid" not in data:
-        return invalid_request
-
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
 
@@ -81,11 +83,11 @@ def turnoff_on(data: dict, user: str) -> dict:
     return {"ok": True}
 
 
-@m.user_endpoint(path=["delete"])
+@m.user_endpoint(path=["delete"], requires={
+    "device_uuid": UUID(),
+    "service_uuid": UUID()
+})
 def delete_service(data: dict, user: str) -> dict:
-    if "service_uuid" not in data or "device_uuid" not in data:
-        return invalid_request
-
     service: Optional[Service] = wrapper.session.query(Service).filter(uuid=data["service_uuid"],
                                                                        device=data["device_uuid"]).first()
 
@@ -103,11 +105,10 @@ def delete_service(data: dict, user: str) -> dict:
     return {"ok": True}
 
 
-@m.user_endpoint(path=["list"])
+@m.user_endpoint(path=["list"], requires={
+    "device_uuid": UUID()
+})
 def list_services(data: dict, user: str) -> dict:
-    if "device_uuid" not in data:
-        return invalid_request
-
     data_return: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
 
     if "owner" in data_return:
@@ -124,16 +125,16 @@ def list_services(data: dict, user: str) -> dict:
     }
 
 
-@m.user_endpoint(path=["create"])
+@m.user_endpoint(path=["create"], requires={
+    "device_uuid": UUID(),
+    "name": Text(nonempty=True)
+})
 def create(data: dict, user: str) -> dict:
     owner: str = user
     name: str = data["name"]
 
     if name not in config["services"].keys():
         return service_is_not_supported
-
-    if "device_uuid" not in data:
-        return invalid_request
 
     data_return: dict = m.contact_microservice("device", ["exist"], {"device_uuid": data["device_uuid"]})
 
@@ -157,11 +158,10 @@ def create(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["part_owner"])
+@m.user_endpoint(path=["part_owner"], requires={
+    "device_uuid": UUID()
+})
 def part_owner(data: dict, user: str) -> dict:
-    if "device_uuid" not in data:
-        return invalid_request
-
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
 
