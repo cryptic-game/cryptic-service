@@ -88,8 +88,8 @@ def turnoff_on(data: dict, user: str) -> dict:
     "service_uuid": UUID()
 })
 def delete_service(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter(uuid=data["service_uuid"],
-                                                                       device=data["device_uuid"]).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
+                                                                          device=data["device_uuid"]).first()
 
     if service is None:
         return invalid_request
