@@ -1,21 +1,28 @@
-invalid_request: dict = {"error": "invalid request"}
+from scheme import UUID
+
+invalid_request: dict = {"error": "invalid_request"}
 
 success_scheme: dict = {"ok": True}
 
-multiple_services: dict = {"error": "you already own a service with this name"}
+multiple_services: dict = {"error": "you_already_own_a_service_with_this_name"}
 
-service_is_not_supported: dict = {"error": "this service is not supported"}
+service_is_not_supported: dict = {"error": "this_service_is_not_supported"}
 
-permission_denied: dict = {"error": "permission denied"}
+permission_denied: dict = {"error": "permission_denied"}
 
-device_does_not_exist: dict = {"error": "this device does not exist"}
+device_does_not_exist: dict = {"error": "this_device_does_not_exist"}
 
-wallet_does_not_exist: dict = {"error": "this wallet does not exist"}
+wallet_does_not_exist: dict = {"error": "this_wallet_does_not_exist"}
 
-miner_does_not_exist: dict = {"error": "miner does not exist"}
+miner_does_not_exist: dict = {"error": "miner_does_not_exist"}
 
-unknown_endpoint: dict = {"error": "unknown endpoint"}
+unknown_service: dict = {"error": "unknown_service"}
 
-unknown_service: dict = {"error": "unknown service"}
+multiple_miners: dict = {"error": "there_is_an_miner_already_on_this_device"}
 
-multiple_miners: dict = {"error": "there already is a miner on this device"}
+service_does_not_exists: dict = {"error": "service_does_not_exists"}
+
+default_required: dict = {
+    "device_uuid": UUID(),
+    "service_uuid": UUID()
+}

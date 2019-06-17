@@ -1,11 +1,12 @@
 import random
 import time
 from typing import Optional, List
-
+from math import sqrt, exp
 from app import wrapper
 from models.service import Service
 from schemes import *
 from vars import config
+from models.bruteforce import Bruteforce
 
 
 def calculate_pos(waited_time: int) -> int:
@@ -20,8 +21,7 @@ def bruteforce(data: dict, user: str) -> dict:
     if "target_device" not in data or "target_service" not in data:
         return invalid_request
 
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
-                                                                          device=data["device_uuid"]).first()
+    service: Optional[Bruteforce] = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"])
     target_service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["target_service"],
                                                                                  device=data["target_device"]).first()
 

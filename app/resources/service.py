@@ -8,6 +8,7 @@ from app import m, wrapper
 from models.service import Service
 from schemes import *
 from vars import config
+from resources.wallet_essentials import exists_device, controls_device
 
 switch: dict = {  # This is just for Tools its an more smooth way of an "switch" statement
     "bruteforce": game_content.bruteforce,
@@ -15,10 +16,7 @@ switch: dict = {  # This is just for Tools its an more smooth way of an "switch"
 }
 
 
-@m.user_endpoint(path=["public_info"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["public_info"], requires=default_required)
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -42,10 +40,7 @@ def use(data: dict, user: str) -> dict:
     return switch[service.name](data, user)
 
 
-@m.user_endpoint(path=["private_info"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["private_info"], requires=default_required)
 def private_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -59,16 +54,13 @@ def private_info(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["turn_off_on"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["turn_off_on"], requires=default_required)
 def turnoff_on(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
 
     if service is None:
-        return invalid_request
+        return service_does_not_exists
 
     if user != service.owner:
         return permission_denied
@@ -83,10 +75,7 @@ def turnoff_on(data: dict, user: str) -> dict:
     return {"ok": True}
 
 
-@m.user_endpoint(path=["delete"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["delete"], requires=default_required)
 def delete_service(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -99,51 +88,44 @@ def delete_service(data: dict, user: str) -> dict:
     if user != data_owner["owner"]:
         return permission_denied
 
-    wrapper.session.delete(service)
-    wrapper.session.commit()
+    service.delete()
 
     return {"ok": True}
 
 
-@m.user_endpoint(path=["list"], requires={
-    "device_uuid": UUID()
-})
+@m.user_endpoint(path=["list"], requires={"device_uuid": UUID()})
 def list_services(data: dict, user: str) -> dict:
-    data_return: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
-
-    if "owner" in data_return:
-        if game_content.part_owner(data["device_uuid"], user) or user == data_return["owner"]:
-            services: List[Service] = wrapper.session.query(Service).filter_by(
-                device=data["device_uuid"]).all()
-        else:
-            return permission_denied
+    data_return: bool = controls_device(data["device_uuid"], user)
+    if data_return:
+        services: List[Service] = wrapper.session.query(Service).filter_by(
+            device=data["device_uuid"]).all()
     else:
-        return device_does_not_exist
+        return permission_denied
 
     return {
         "services": [e.serialize for e in services]
     }
 
 
-@m.user_endpoint(path=["create"], requires={
-    "device_uuid": UUID(),
-    "name": Text(nonempty=True)
-})
+@m.user_endpoint(path=["create"], requires=None)
 def create(data: dict, user: str) -> dict:
+    if "device_uuid" not in data or "name" not in data or data["device_uuid"] is not str or data["name"] is not str:
+        return {"error": "invalid data"}
+
     owner: str = user
     name: str = data["name"]
 
     if name not in config["services"].keys():
         return service_is_not_supported
 
-    data_return: dict = m.contact_microservice("device", ["exist"], {"device_uuid": data["device_uuid"]})
+    data_return: bool = exists_device(data["device_uuid"])
 
-    if "exist" not in data_return or data_return["exist"] is False:
+    if not data_return:
         return device_does_not_exist
 
-    data_owner: dict = m.contact_microservice("device", ["owner"], {"device_uuid": data["device_uuid"]})
+    data_owner: bool = controls_device(data["device_uuid"], user)
 
-    if data_owner["owner"] != user and not game_content.part_owner(data["device_uuid"], user):
+    if not data_owner:
         return permission_denied
 
     service_count: int = \
@@ -153,14 +135,12 @@ def create(data: dict, user: str) -> dict:
     if service_count != 0:
         return multiple_services
 
-    service: Service = Service.create(owner, data["device_uuid"], name)
+    service: Service = Service.create(data)
 
     return service.serialize
 
 
-@m.user_endpoint(path=["part_owner"], requires={
-    "device_uuid": UUID()
-})
+@m.user_endpoint(path=["part_owner"], requires={"device_uuid": UUID()})
 def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
