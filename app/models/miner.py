@@ -1,5 +1,5 @@
 import time
-from typing import Union, NoReturn
+from typing import Union
 
 from sqlalchemy import Column, String, Integer, Float
 
@@ -12,7 +12,6 @@ class Miner(wrapper.Base):
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
     started: Union[Column, float] = Column(Float)
-    mined_coins: Union[Column, float] = Column(Float)
     power: Union[Column, int] = Column(Integer)
 
     @property
@@ -32,7 +31,6 @@ class Miner(wrapper.Base):
             uuid=uuid,
             wallet=wallet,
             started=None,
-            mined_coins=0,
             power=0
         )
 
@@ -41,15 +39,18 @@ class Miner(wrapper.Base):
 
         return miner
 
-    def update_miner(self) -> NoReturn:
+    def update_miner(self) -> int:
         from resources.essentials import calculate_mcs
         from resources.service import Service
 
         service: Service = wrapper.session.query(Service).get(self.uuid)
         if not service.running:
-            return
+            return 0
 
         now: float = time.time()
-        self.mined_coins += calculate_mcs(service.device, self.power) * (now - self.started)
-        self.started = now
-        wrapper.session.commit()
+        mined_coins: int = int(calculate_mcs(service.device, self.power) * (now - self.started))
+        if mined_coins > 0:
+            self.started = now
+            wrapper.session.commit()
+
+        return mined_coins

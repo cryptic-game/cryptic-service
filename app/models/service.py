@@ -4,8 +4,6 @@ from uuid import uuid4
 from sqlalchemy import Column, Integer, String, Boolean
 
 from app import wrapper
-from models.bruteforce import Bruteforce
-from models.miner import Miner
 from vars import config
 
 
@@ -63,14 +61,3 @@ class Service(wrapper.Base):
 
     def public_data(self):
         return {"uuid": self.uuid, "name": self.name, "running_port": self.running_port, "device": self.device}
-
-    def delete(self):
-        if self.name == "bruteforce":
-            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=self.uuid).first()
-            wrapper.session.delete(bruteforce)
-        elif self.name == "miner":
-            miner: Miner = wrapper.session.query(Miner).filter_by(uuid=self.uuid).first()
-            wrapper.session.delete(miner)
-
-        wrapper.session.delete(self)
-        wrapper.session.commit()

@@ -107,7 +107,22 @@ def delete_service(data: dict, user: str) -> dict:
     if user != m.contact_microservice("device", ["owner"], {"device_uuid": device_uuid})["owner"]:
         return permission_denied
 
-    service.delete()
+    if service.name == "bruteforce":
+        bruteforce: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=service.uuid).first()
+        wrapper.session.delete(bruteforce)
+    elif service.name == "miner":
+        miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service.uuid).first()
+        mined_coins: int = miner.update_miner()
+        if mined_coins > 0:
+            m.contact_microservice("currency", ["put"], {
+                "destination_uuid": miner.wallet,
+                "amount": mined_coins,
+                "create_transaction": False
+            })
+        wrapper.session.delete(miner)
+
+    wrapper.session.delete(service)
+    wrapper.session.commit()
 
     return {"ok": True}
 

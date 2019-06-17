@@ -1,5 +1,4 @@
 import time
-from typing import Dict
 
 from scheme import UUID, Integer
 
@@ -17,7 +16,6 @@ def get(data: dict, user: str) -> dict:
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=data["service_uuid"]).first()
     if miner is None:
         return miner_does_not_exist
-    miner.update_miner()
     return miner.serialize
 
 
@@ -49,7 +47,13 @@ def set_power(data: dict, user: str) -> dict:
     if not controls_device(service.device, user):
         return permission_denied
 
-    miner.update_miner()
+    mined_coins: int = miner.update_miner()
+    if mined_coins > 0:
+        m.contact_microservice("currency", ["put"], {
+            "destination_uuid": miner.wallet,
+            "amount": mined_coins,
+            "create_transaction": False
+        })
 
     miner.power: int = power
     if power >= 10:
@@ -65,17 +69,5 @@ def set_power(data: dict, user: str) -> dict:
 
 @m.microservice_endpoint(path=["miner", "collect"])
 def collect(data: dict, microservice: str) -> dict:
-    wallet: str = data["wallet_uuid"]
-
-    coins: Dict[str, int] = {}
-    for miner in wrapper.session.query(Miner).filter_by(wallet=wallet).all():
-        miner.update_miner()
-
-        mined_coins: int = int(miner.mined_coins)
-        if mined_coins == 0:
-            continue
-        miner.mined_coins -= mined_coins
-        wrapper.session.commit()
-
-        coins[miner.uuid] = mined_coins
-    return coins
+    return {"coins": sum(miner.update_miner() for miner in
+                         wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"]))}
