@@ -1,15 +1,12 @@
-import time
-from typing import NoReturn
-from typing import Union, Dict
+from typing import Union
 from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, Boolean
 
 from app import wrapper
-from vars import config
-
-from models.miner import Miner
 from models.bruteforce import Bruteforce
+from models.miner import Miner
+from vars import config
 
 
 class Service(wrapper.Base):
@@ -34,40 +31,35 @@ class Service(wrapper.Base):
         return d
 
     @staticmethod
-    def create(data: dict) -> 'Service':
+    def create(device: str, owner: str, name: str) -> 'Service':
         """
         Creates a new service.
-        :param data:
+
+        :param device: uuid of the associated device
+        :param owner: uuid of the owner
+        :param name: name of the service
         :return: New DeviceModel
         """
 
         uuid: str = str(uuid4())
 
-        default_port: int = config["services"][data["name"]]["default_port"]
-
-        service = Service(uuid=uuid, owner=data["user"], device=data["device_uuid"], running=True, name=data["name"],
-                          running_port=default_port, consumption=config["services"][data["name"]]["consumption"])
+        service = Service(
+            uuid=uuid,
+            owner=owner,
+            device=device,
+            running=config["services"][name]["default_port"] is not None,
+            name=name,
+            running_port=config["services"][name]["default_port"],
+            consumption=config["services"][name]["consumption"]
+        )
 
         wrapper.session.add(service)
-
-        if data["name"] == "bruteforce":
-            Bruteforce.create(data["user"], uuid)
-        elif data["name"] == "miner":
-            if "wallet_uuid" not in data:
-                return {"error": "wallet_uuid_is_missing"}
-            Miner.create(data["user"], data["wallet_uuid"])
-
-        # Tools that dont have to save special information and only the existens is important dont need an extra Class.
-
         wrapper.session.commit()
 
-        return Union[Service, Dict[str, str]]
+        return service
 
-    def use(self, data: dict) -> NoReturn:
-        if self.name == "bruteforce":
-            self.target_service: str = data["target_service"]
-            self.target_device: str = data["target_device"]
-            self.action: int = int(time.time())
+    def check_access(self, user: str) -> bool:
+        return user in (self.owner, self.part_owner)
 
     def public_data(self):
         return {"uuid": self.uuid, "name": self.name, "running_port": self.running_port, "device": self.device}
@@ -76,14 +68,9 @@ class Service(wrapper.Base):
         if self.name == "bruteforce":
             bruteforce: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=self.uuid).first()
             wrapper.session.delete(bruteforce)
-
-
         elif self.name == "miner":
             miner: Miner = wrapper.session.query(Miner).filter_by(uuid=self.uuid).first()
             wrapper.session.delete(miner)
 
         wrapper.session.delete(self)
         wrapper.session.commit()
-
-
-wrapper.Base.metadata.create_all(wrapper.engine)

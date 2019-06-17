@@ -1,10 +1,9 @@
 import time
-from typing import Union
-from uuid import uuid4
-from sqlalchemy import Column, String, Boolean, Integer, DateTime, Float
-from vars import config
+from typing import Union, NoReturn
+
+from sqlalchemy import Column, String, Integer, Float
+
 from app import wrapper
-from math import sqrt, exp
 
 
 class Miner(wrapper.Base):
@@ -12,10 +11,12 @@ class Miner(wrapper.Base):
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
-    started: Union[Column, int] = Column(Integer)
+    started: Union[Column, float] = Column(Float)
+    mined_coins: Union[Column, float] = Column(Float)
+    power: Union[Column, int] = Column(Integer)
 
     @property
-    def serialize(self):
+    def serialize(self) -> dict:
         _: str = self.uuid
         d: dict = self.__dict__.copy()
 
@@ -26,11 +27,13 @@ class Miner(wrapper.Base):
         return d
 
     @staticmethod
-    def create(user: str, wallet: str) -> 'Miner':
+    def create(uuid: str, wallet: str) -> 'Miner':
         miner: Miner = Miner(
-            uuid=str(uuid4()),
+            uuid=uuid,
             wallet=wallet,
             started=None,
+            mined_coins=0,
+            power=0
         )
 
         wrapper.session.add(miner)
@@ -38,33 +41,15 @@ class Miner(wrapper.Base):
 
         return miner
 
-    def calculate_mcs(self) -> float:
-        a: int = config["services"]["miner"]["a"]
-        b: int = config["services"]["miner"]["b"]
-        c: int = config["services"]["miner"]["c"]
-        x: int = 80  # const because should be definded by the strength of the device
+    def update_miner(self) -> NoReturn:
+        from resources.essentials import calculate_mcs
+        from resources.service import Service
 
-        return (b * (3 + a) / 10500 + sqrt(a * b * c) / 30000) * (1 - exp(-0.0231 * x))
+        service: Service = wrapper.session.query(Service).get(self.uuid)
+        if not service.running:
+            return
 
-    def update_miner(self):
-        from resources.wallet_essentials import checkrunning
-        if not checkrunning(self.uuid):
-            return False
-
-        mined_coins: int = self.calculate_mcs() * (int(time.time()) - self.started)
-        self.started = int(time.time())
+        now: float = time.time()
+        self.mined_coins += calculate_mcs(service.device, self.power) * (now - self.started)
+        self.started = now
         wrapper.session.commit()
-
-        return mined_coins
-
-    def show_miner(self):
-        from resources.wallet_essentials import checkrunning
-        if not checkrunning(self.uuid):
-            return False
-
-        mined_coins: int = self.calculate_mcs() * (int(time.time()) - self.started)
-
-        return mined_coins
-
-
-wrapper.Base.metadata.create_all(wrapper.engine)

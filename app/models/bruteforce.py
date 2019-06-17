@@ -1,7 +1,9 @@
 import time
 from typing import NoReturn
 from typing import Union
-from sqlalchemy import Column, Integer, String, Boolean
+
+from sqlalchemy import Column, Integer, String
+
 from app import wrapper
 
 
@@ -9,7 +11,7 @@ class Bruteforce(wrapper.Base):
     __tablename__: str = "bruteforce"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    action: Union[Column, int] = Column(Integer)
+    started: Union[Column, int] = Column(Integer)
     target_service: Union[Column, str] = Column(String(36))
     target_device: Union[Column, str] = Column(String(36))
 
@@ -31,17 +33,19 @@ class Bruteforce(wrapper.Base):
         :return: New DeviceModel
         """
 
-        service = Bruteforce(uuid=uuid, owner=user)
+        service = Bruteforce(
+            uuid=uuid,
+            started=None,
+            target_service=None,
+            target_device=None
+        )
 
         wrapper.session.add(service)
         wrapper.session.commit()
 
         return service
 
-    def use(self, data: dict) -> NoReturn:
-        self.target_service: str = data["target_service"]
-        self.target_device: str = data["target_device"]
-        self.action: int = int(time.time())
-
-
-wrapper.Base.metadata.create_all(wrapper.engine)
+    def use(self, target_service: str, target_device: str) -> NoReturn:
+        self.target_service: str = target_service
+        self.target_device: str = target_device
+        self.started: int = int(time.time())
