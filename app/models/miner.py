@@ -11,7 +11,7 @@ class Miner(wrapper.Base):
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
-    started: Union[Column, float] = Column(Float)
+    started: Union[Column, int] = Column(Integer)  # This Fuck is UNIX Time and we realy dont care about ms.
     power: Union[Column, int] = Column(Integer)
 
     @property

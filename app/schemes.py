@@ -1,3 +1,5 @@
+from scheme import UUID
+
 invalid_request: dict = {"error": "invalid_request"}
 
 success_scheme: dict = {"ok": True}
@@ -21,3 +23,15 @@ multiple_miners: dict = {"error": "there_is_an_miner_already_on_this_device"}
 service_does_not_exists: dict = {"error": "service_does_not_exists"}
 
 service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
+
+attack_scheme: dict = {
+    "device_uuid": UUID(),
+    "service_uuid": UUID(),
+    "target_service": UUID(),
+    "target_device": UUID()
+}
+
+standart_scheme: dict = {
+    "device_uuid": UUID(),
+    "service_uuid": UUID(),
+}

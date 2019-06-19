@@ -3,6 +3,9 @@ from math import exp, sqrt
 from app import m, wrapper
 from models.service import Service
 from resources import game_content
+from models.miner import Miner
+from models.bruteforce import Bruteforce
+from schemes import invalid_request, wallet_does_not_exist
 
 
 def exists_device(device: str) -> bool:
@@ -27,3 +30,24 @@ def calculate_mcs(device: str, power: int) -> float:
     clock_rate: int = 800
     ram: int = 512
     return (clock_rate * (3 + cores) / 10500 + sqrt(cores * clock_rate * ram) / 30000) * (1 - exp(-0.0231 * power))
+
+
+def create(name: str, data: dict):
+    service: Service = Service.create(data["device_uuid"], data["user"], name)
+
+    if name == "bruteforce":
+        Bruteforce.create(data["user"], service.uuid)
+    elif name == "miner":
+
+        # First check for name than validate for special information
+
+        if "wallet_uuid" not in data:
+            return invalid_request
+        wallet_uuid: str = data["wallet_uuid"]
+        if not isinstance(wallet_uuid, str):
+            return invalid_request
+        if not exists_wallet(wallet_uuid):
+            return wallet_does_not_exist
+        Miner.create(service.uuid, data["wallet_uuid"])
+
+    return service.serialize

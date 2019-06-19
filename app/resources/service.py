@@ -8,20 +8,16 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, exists_wallet
+from resources.essentials import exists_device, controls_device, create
 from schemes import *
 from vars import config
 
 switch: dict = {  # this is just for tools, its a more smooth way of a "switch" statement
-    "bruteforce": game_content.bruteforce,
     "portscan": game_content.portscan
 }
 
 
-@m.user_endpoint(path=["public_info"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["public_info"], requires=standart_scheme)
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -53,10 +49,7 @@ def use(data: dict, user: str) -> dict:
     return switch[service.name](data, user)
 
 
-@m.user_endpoint(path=["private_info"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["private_info"], requires=standart_scheme)
 def private_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -70,10 +63,7 @@ def private_info(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["turn_off_on"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["turn_off_on"], requires=standart_scheme)
 def turnoff_on(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -91,10 +81,7 @@ def turnoff_on(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["delete"], requires={
-    "device_uuid": UUID(),
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["delete"], requires=standart_scheme)
 def delete_service(data: dict, user: str) -> dict:
     device_uuid: str = data["device_uuid"]
     service_uuid: str = data["service_uuid"]
@@ -150,16 +137,6 @@ def create(data: dict, user: str) -> dict:
     device_uuid: str = data["device_uuid"]
     name: str = data["name"]
 
-    wallet_uuid: str = None
-    if name == "miner":
-        if "wallet_uuid" not in data:
-            return invalid_request
-        wallet_uuid: str = data["wallet_uuid"]
-        if not isinstance(wallet_uuid, str):
-            return invalid_request
-        if not exists_wallet(wallet_uuid):
-            return wallet_does_not_exist
-
     if not isinstance(device_uuid, str) or not isinstance(name, str):
         return invalid_request
 
@@ -180,14 +157,7 @@ def create(data: dict, user: str) -> dict:
     if service_count != 0:
         return multiple_services
 
-    service: Service = Service.create(device_uuid, user, name)
-
-    if name == "bruteforce":
-        Bruteforce.create(user, service.uuid)
-    elif name == "miner":
-        Miner.create(service.uuid, wallet_uuid)
-
-    return service.serialize
+    return create(name, data)
 
 
 @m.user_endpoint(path=["part_owner"], requires={
