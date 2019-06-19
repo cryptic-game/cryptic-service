@@ -45,7 +45,7 @@ class Service(wrapper.Base):
             uuid=uuid,
             owner=owner,
             device=device,
-            running=config["services"][name]["default_port"],
+            running=True,
             name=name,
             running_port=config["services"][name]["default_port"],
             consumption=config["services"][name]["consumption"]
