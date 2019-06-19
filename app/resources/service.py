@@ -1,6 +1,5 @@
 from typing import Optional
 
-from scheme import UUID
 from sqlalchemy import func
 
 import resources.game_content as game_content
@@ -8,7 +7,7 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, create
+from resources.essentials import exists_device, controls_device, create_service
 from schemes import *
 from vars import config
 
@@ -69,7 +68,7 @@ def turnoff_on(data: dict, user: str) -> dict:
                                                                           device=data["device_uuid"]).first()
 
     if service is None:
-        return service_does_not_exists
+        return service_does_not_exist
 
     if user != service.owner:
         return permission_denied
@@ -89,7 +88,7 @@ def delete_service(data: dict, user: str) -> dict:
                                                                           device=device_uuid).first()
 
     if service is None:
-        return service_does_not_exists
+        return service_does_not_exist
 
     if user != m.contact_microservice("device", ["owner"], {"device_uuid": device_uuid})["owner"]:
         return permission_denied
@@ -157,7 +156,7 @@ def create(data: dict, user: str) -> dict:
     if service_count != 0:
         return multiple_services
 
-    return create(name, data)
+    return create_service(name, data, user)
 
 
 @m.user_endpoint(path=["part_owner"], requires={

@@ -1,5 +1,4 @@
 from typing import Union
-from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, Boolean
 
@@ -29,23 +28,22 @@ class Service(wrapper.Base):
         return d
 
     @staticmethod
-    def create(device: str, owner: str, name: str) -> 'Service':
+    def create(uuid: str, device: str, owner: str, name: str) -> 'Service':
         """
         Creates a new service.
 
+        :param uuid: uuid of the service
         :param device: uuid of the associated device
         :param owner: uuid of the owner
         :param name: name of the service
         :return: New DeviceModel
         """
 
-        uuid: str = str(uuid4())
-
         service = Service(
             uuid=uuid,
             owner=owner,
             device=device,
-            running=True,
+            running=config["services"][name]["auto_start"],
             name=name,
             running_port=config["services"][name]["default_port"],
             consumption=config["services"][name]["consumption"]

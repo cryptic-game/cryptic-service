@@ -1,5 +1,5 @@
 from app import m, wrapper
-from schemes import attack_scheme, invalid_request, success_scheme, standart_scheme, service_does_not_exists
+from schemes import *
 from models.bruteforce import Bruteforce
 from models.service import Service
 import time
@@ -8,50 +8,57 @@ from resources.game_content import calculate_pos
 
 
 @m.user_endpoint(path=["bruteforce", "attack"], requires=attack_scheme)
-def attack(user: str, data):
+def attack(data: dict, user: str):
     target_device: str = data["target_device"]
     target_service_uuid: str = data["target_service"]
 
     service: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"]).first()
+
     target_service: Service = wrapper.session.query(Service).filter_by(uuid=target_service_uuid,
                                                                        device=target_device).first()
+    if service is None or target_service is None:
+        return service_does_not_exist
+    if not target_service.running:
+        return service_is_not_running
 
-    service.use(target_service, target_device)
+    service.target_service: str = target_service_uuid
+    service.target_device: str = target_device
+    service.started: int = int(time.time())
+    wrapper.session.commit()
 
     return success_scheme
 
 
 @m.user_endpoint(path=["bruteforce", "stop"], requires=standart_scheme)
-def stop(user: str, data: dict):
-    target_device: str = data["target_device"]
-    target_service_uuid: str = data["target_service"]
-
+def stop(data: dict, user: str):
     service: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"]).first()
-    target_service: Service = wrapper.session.query(Service).filter_by(uuid=target_service_uuid,
+
+    if service is None:
+        return service_does_not_exist
+
+    if service.target_device is None or service.target_service is None or service.started is None:
+        return you_first_have_to_start_an_attack
+
+    target_device: str = service.target_device
+
+    target_service: Service = wrapper.session.query(Service).filter_by(uuid=service.target_service,
                                                                        device=target_device).first()
+    if target_service is None:
+        return service_does_not_exist
 
-    if service is None or target_service is None:
-        return service_does_not_exists
+    pen_time: float = time.time() - service.started
 
-    if isinstance(service.target_device, str) and isinstance(service.target_service, str) and len(
-            service.target_device) > 1:
-        pen_time: float = time.time() - service.started
+    random_value: float = random.random() + 0.1
 
-        random_value: float = random.random() + 0.1
+    service.target_device = None
+    service.target_service = None
+    service.started = None
+    wrapper.session.commit()
 
-        service.target_device = None
-        service.target_service = None
-        service.started = None
+    access: bool = False
+    if random_value < calculate_pos(pen_time):
+        target_service.part_owner: str = user
         wrapper.session.commit()
+        access: bool = True
 
-        access: bool = False
-        if random_value < calculate_pos(pen_time):
-            target_service.part_owner: str = user
-            wrapper.session.commit()
-            access: bool = True
-
-        return {"ok": True, "access": access, "time": pen_time, "target_device": target_device}
-
-    else:
-
-        return {"error": "you_first_have_to_start_an_attack"}
+    return {"ok": True, "access": access, "time": pen_time, "target_device": target_device}

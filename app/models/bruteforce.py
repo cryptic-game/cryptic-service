@@ -25,11 +25,10 @@ class Bruteforce(wrapper.Base):
         return d
 
     @staticmethod
-    def create(user: str, uuid: str) -> 'Bruteforce':
+    def create(uuid: str) -> 'Bruteforce':
         """
         Creates a new service.
-        :param uuid:
-        :param user: The owner's uuid
+        :param uuid: uuid of the service
         :return: New DeviceModel
         """
 
@@ -44,8 +43,3 @@ class Bruteforce(wrapper.Base):
         wrapper.session.commit()
 
         return service
-
-    def use(self, target_service: str, target_device: str) -> NoReturn:
-        self.target_service: str = target_service
-        self.target_device: str = target_device
-        self.started: int = int(time.time())

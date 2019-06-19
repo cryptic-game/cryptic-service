@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from sqlalchemy import Column, String, Integer, Float
+from sqlalchemy import Column, String, Integer
 
 from app import wrapper
 
@@ -11,7 +11,7 @@ class Miner(wrapper.Base):
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
-    started: Union[Column, int] = Column(Integer)  # This Fuck is UNIX Time and we realy dont care about ms.
+    started: Union[Column, int] = Column(Integer)
     power: Union[Column, int] = Column(Integer)
 
     @property
@@ -20,8 +20,6 @@ class Miner(wrapper.Base):
         d: dict = self.__dict__.copy()
 
         del d['_sa_instance_state']
-        if d['started'] is not None:
-            d['started'] = str(d['started'])
 
         return d
 
@@ -47,10 +45,10 @@ class Miner(wrapper.Base):
         if not service.running:
             return 0
 
-        now: float = time.time()
+        now: int = int(time.time())
         mined_coins: int = int(calculate_mcs(service.device, self.power) * (now - self.started))
         if mined_coins > 0:
-            self.started = now
+            self.started: int = now
             wrapper.session.commit()
 
         return mined_coins
