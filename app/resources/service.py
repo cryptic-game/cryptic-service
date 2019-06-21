@@ -16,7 +16,7 @@ switch: dict = {  # this is just for tools, its a more smooth way of a "switch" 
 }
 
 
-@m.user_endpoint(path=["public_info"], requires=standart_scheme)
+@m.user_endpoint(path=["public_info"], requires=standard_scheme)
 def public_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -48,7 +48,7 @@ def use(data: dict, user: str) -> dict:
     return switch[service.name](data, user)
 
 
-@m.user_endpoint(path=["private_info"], requires=standart_scheme)
+@m.user_endpoint(path=["private_info"], requires=standard_scheme)
 def private_info(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -62,7 +62,7 @@ def private_info(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["turn_off_on"], requires=standart_scheme)
+@m.user_endpoint(path=["turn_off_on"], requires=standard_scheme)
 def turnoff_on(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
                                                                           device=data["device_uuid"]).first()
@@ -80,7 +80,7 @@ def turnoff_on(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["delete"], requires=standart_scheme)
+@m.user_endpoint(path=["delete"], requires=standard_scheme)
 def delete_service(data: dict, user: str) -> dict:
     device_uuid: str = data["device_uuid"]
     service_uuid: str = data["service_uuid"]

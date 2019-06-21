@@ -29,7 +29,7 @@ def attack(data: dict, user: str):
     return success_scheme
 
 
-@m.user_endpoint(path=["bruteforce", "stop"], requires=standart_scheme)
+@m.user_endpoint(path=["bruteforce", "stop"], requires=standard_scheme)
 def stop(data: dict, user: str):
     service: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"]).first()
 

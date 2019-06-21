@@ -35,7 +35,7 @@ attack_scheme: dict = {
     "target_device": UUID()
 }
 
-standart_scheme: dict = {
+standard_scheme: dict = {
     "device_uuid": UUID(),
     "service_uuid": UUID(),
 }
