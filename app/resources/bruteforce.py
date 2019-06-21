@@ -17,9 +17,9 @@ def attack(data: dict, user: str):
     target_service: Service = wrapper.session.query(Service).filter_by(uuid=target_service_uuid,
                                                                        device=target_device).first()
     if service is None or target_service is None:
-        return service_does_not_exist
+        return service_not_found
     if not target_service.running:
-        return service_is_not_running
+        return service_not_running
 
     service.target_service: str = target_service_uuid
     service.target_device: str = target_device
@@ -34,17 +34,17 @@ def stop(data: dict, user: str):
     service: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"]).first()
 
     if service is None:
-        return service_does_not_exist
+        return service_not_found
 
     if service.target_device is None or service.target_service is None or service.started is None:
-        return you_first_have_to_start_an_attack
+        return attack_not_running
 
     target_device: str = service.target_device
 
     target_service: Service = wrapper.session.query(Service).filter_by(uuid=service.target_service,
                                                                        device=target_device).first()
     if target_service is None:
-        return service_does_not_exist
+        return service_not_found
 
     pen_time: float = time.time() - service.started
 

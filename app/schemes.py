@@ -4,29 +4,27 @@ invalid_request: dict = {"error": "invalid_request"}
 
 success_scheme: dict = {"ok": True}
 
-multiple_services: dict = {"error": "you_already_own_a_service_with_this_name"}
+already_own_this_service: dict = {"error": "already_own_this_service"}
 
-service_is_not_supported: dict = {"error": "this_service_is_not_supported"}
+service_not_supported: dict = {"error": "service_not_supported"}
 
-service_is_not_running: dict = {"error": "this_service_is_not_running"}
+service_not_running: dict = {"error": "service_not_running"}
 
 permission_denied: dict = {"error": "permission_denied"}
 
-device_does_not_exist: dict = {"error": "this_device_does_not_exist"}
+device_not_found: dict = {"error": "device_not_found"}
 
-wallet_does_not_exist: dict = {"error": "this_wallet_does_not_exist"}
+wallet_not_found: dict = {"error": "wallet_not_found"}
 
-miner_does_not_exist: dict = {"error": "miner_does_not_exist"}
+miner_not_found: dict = {"error": "miner_not_found"}
+
+service_not_found: dict = {"error": "service_not_found"}
 
 unknown_service: dict = {"error": "unknown_service"}
 
-multiple_miners: dict = {"error": "there_is_an_miner_already_on_this_device"}
-
-service_does_not_exist: dict = {"error": "service_does_not_exist"}
-
 service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
 
-you_first_have_to_start_an_attack: dict = {"error": "you_first_have_to_start_an_attack"}
+attack_not_running: dict = {"error": "attack_not_running"}
 
 attack_scheme: dict = {
     "device_uuid": UUID(),

@@ -15,7 +15,7 @@ from schemes import *
 def get(data: dict, user: str) -> dict:
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=data["service_uuid"]).first()
     if miner is None:
-        return miner_does_not_exist
+        return miner_not_found
     return miner.serialize
 
 
@@ -39,16 +39,16 @@ def set_wallet(data: dict, user: str) -> dict:
 
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service_uuid).first()
     if miner is None:
-        return miner_does_not_exist
+        return miner_not_found
 
     service: Service = wrapper.session.query(Service).filter_by(uuid=service_uuid).first()
     if not exists_device(service.device):
-        return device_does_not_exist
+        return device_not_found
     if not controls_device(service.device, user):
         return permission_denied
 
     if not exists_wallet(wallet_uuid):
-        return wallet_does_not_exist
+        return wallet_not_found
 
     mined_coins: int = miner.update_miner()
     if mined_coins > 0:
@@ -74,11 +74,11 @@ def set_power(data: dict, user: str) -> dict:
 
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service_uuid).first()
     if miner is None:
-        return miner_does_not_exist
+        return miner_not_found
 
     service: Service = wrapper.session.query(Service).filter_by(uuid=service_uuid).first()
     if not exists_device(service.device):
-        return device_does_not_exist
+        return device_not_found
     if not controls_device(service.device, user):
         return permission_denied
 
