@@ -1,8 +1,6 @@
-import time
-from typing import NoReturn
 from typing import Union
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, BigInteger, String
 
 from app import wrapper
 
@@ -11,7 +9,7 @@ class Bruteforce(wrapper.Base):
     __tablename__: str = "bruteforce"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    started: Union[Column, int] = Column(Integer)
+    started: Union[Column, int] = Column(BigInteger)
     target_service: Union[Column, str] = Column(String(36))
     target_device: Union[Column, str] = Column(String(36))
 
