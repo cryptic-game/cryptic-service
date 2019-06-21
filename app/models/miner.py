@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, BigInteger
 
 from app import wrapper
 
@@ -11,7 +11,7 @@ class Miner(wrapper.Base):
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
-    started: Union[Column, int] = Column(Integer)
+    started: Union[Column, int] = Column(BigInteger)
     power: Union[Column, int] = Column(Integer)
 
     @property
