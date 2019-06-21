@@ -1,7 +1,4 @@
-import time
-from typing import NoReturn
 from typing import Union
-from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, Boolean
 
@@ -17,11 +14,9 @@ class Service(wrapper.Base):
     owner: Union[Column, str] = Column(String(36), nullable=False)
     name: Union[Column, str] = Column(String(32))
     running: Union[Column, bool] = Column(Boolean)
-    action: Union[Column, int] = Column(Integer)
-    target_service: Union[Column, str] = Column(String(36))
-    target_device: Union[Column, str] = Column(String(36))
-    part_owner: Union[Column, str] = Column(String(36))
     running_port: Union[Column, int] = Column(Integer)
+    consumption: Union[Column, int] = Column(Integer)
+    part_owner: Union[Column, str] = Column(String(36))
 
     @property
     def serialize(self):
@@ -33,34 +28,34 @@ class Service(wrapper.Base):
         return d
 
     @staticmethod
-    def create(user: str, device: str, name: str) -> 'Service':
+    def create(uuid: str, device: str, owner: str, name: str) -> 'Service':
         """
         Creates a new service.
-        :param name:
-        :param user: The owner's uuid
-        :param device: devices uuid
+
+        :param uuid: uuid of the service
+        :param device: uuid of the associated device
+        :param owner: uuid of the owner
+        :param name: name of the service
         :return: New DeviceModel
         """
 
-        uuid: str = str(uuid4())
-
-        default_port: int = config["services"][name]["default_port"]
-
-        service = Service(uuid=uuid, owner=user, device=device, running=True, name=name, running_port=default_port)
+        service = Service(
+            uuid=uuid,
+            owner=owner,
+            device=device,
+            running=config["services"][name]["auto_start"],
+            name=name,
+            running_port=config["services"][name]["default_port"],
+            consumption=config["services"][name]["consumption"]
+        )
 
         wrapper.session.add(service)
         wrapper.session.commit()
 
         return service
 
-    def use(self, data: dict) -> NoReturn:
-        if self.name == "bruteforce":
-            self.target_service: str = data["target_service"]
-            self.target_device: str = data["target_device"]
-            self.action: int = int(time.time())
+    def check_access(self, user: str) -> bool:
+        return user in (self.owner, self.part_owner)
 
     def public_data(self):
         return {"uuid": self.uuid, "name": self.name, "running_port": self.running_port, "device": self.device}
-
-
-wrapper.Base.metadata.create_all(wrapper.engine)
