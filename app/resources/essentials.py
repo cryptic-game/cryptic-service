@@ -7,7 +7,7 @@ from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
 from resources import game_content
-from schemes import invalid_request, wallet_does_not_exist
+from schemes import invalid_request, wallet_not_found
 
 
 def exists_device(device: str) -> bool:
@@ -47,7 +47,7 @@ def create_service(name: str, data: dict, user: str):
         if not isinstance(wallet_uuid, str):
             return invalid_request
         if not exists_wallet(wallet_uuid):
-            return wallet_does_not_exist
+            return wallet_not_found
         Miner.create(uuid, data["wallet_uuid"])
 
     service: Service = Service.create(uuid, data["device_uuid"], user, name)

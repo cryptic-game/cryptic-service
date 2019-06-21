@@ -68,7 +68,7 @@ def turnoff_on(data: dict, user: str) -> dict:
                                                                           device=data["device_uuid"]).first()
 
     if service is None:
-        return service_does_not_exist
+        return service_not_found
 
     if user != service.owner:
         return permission_denied
@@ -88,7 +88,7 @@ def delete_service(data: dict, user: str) -> dict:
                                                                           device=device_uuid).first()
 
     if service is None:
-        return service_does_not_exist
+        return service_not_found
 
     if user != m.contact_microservice("device", ["owner"], {"device_uuid": device_uuid})["owner"]:
         return permission_denied
@@ -140,10 +140,10 @@ def create(data: dict, user: str) -> dict:
         return invalid_request
 
     if name not in config["services"].keys():
-        return service_is_not_supported
+        return service_not_supported
 
     if not exists_device(device_uuid):
-        return device_does_not_exist
+        return device_not_found
 
     if not controls_device(device_uuid, user):
         return permission_denied
@@ -154,7 +154,7 @@ def create(data: dict, user: str) -> dict:
         Service.name == name
     ).first()[0]
     if service_count != 0:
-        return multiple_services
+        return already_own_this_service
 
     return create_service(name, data, user)
 
