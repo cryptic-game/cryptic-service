@@ -1,10 +1,11 @@
+import random
+import time
+
 from app import m, wrapper
-from schemes import *
 from models.bruteforce import Bruteforce
 from models.service import Service
-import time
-import random
 from resources.game_content import calculate_pos
+from schemes import *
 
 
 @m.user_endpoint(path=["bruteforce", "attack"], requires=attack_scheme)
@@ -27,6 +28,19 @@ def attack(data: dict, user: str):
     wrapper.session.commit()
 
     return success_scheme
+
+
+@m.user_endpoint(path=["bruteforce", "status"], requires=standard_scheme)
+def status(data: dict, user: str):
+    service: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=data["service_uuid"]).first()
+
+    if service is None:
+        return service_not_found
+
+    if service.target_device is None or service.target_service is None or service.started is None:
+        return attack_not_running
+
+    return {**service.serialize, "pen_time": time.time() - service.started}
 
 
 @m.user_endpoint(path=["bruteforce", "stop"], requires=standard_scheme)
