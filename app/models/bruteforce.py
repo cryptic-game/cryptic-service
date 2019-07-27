@@ -18,24 +18,19 @@ class Bruteforce(wrapper.Base):
         _: str = self.uuid
         d: dict = self.__dict__.copy()
 
-        del d['_sa_instance_state']
+        del d["_sa_instance_state"]
 
         return d
 
     @staticmethod
-    def create(uuid: str) -> 'Bruteforce':
+    def create(uuid: str) -> "Bruteforce":
         """
         Creates a new service.
         :param uuid: uuid of the service
         :return: New DeviceModel
         """
 
-        service = Bruteforce(
-            uuid=uuid,
-            started=None,
-            target_service=None,
-            target_device=None
-        )
+        service = Bruteforce(uuid=uuid, started=None, target_service=None, target_device=None)
 
         wrapper.session.add(service)
         wrapper.session.commit()

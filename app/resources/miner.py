@@ -9,9 +9,7 @@ from resources.essentials import exists_device, controls_device, exists_wallet
 from schemes import *
 
 
-@m.user_endpoint(path=["miner", "get"], requires={
-    "service_uuid": UUID()
-})
+@m.user_endpoint(path=["miner", "get"], requires={"service_uuid": UUID()})
 def get(data: dict, user: str) -> dict:
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=data["service_uuid"]).first()
     if miner is None:
@@ -19,20 +17,12 @@ def get(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "list"], requires={
-    "wallet_uuid": UUID()
-})
+@m.user_endpoint(path=["miner", "list"], requires={"wallet_uuid": UUID()})
 def list_miners(data: dict, user: str) -> dict:
-    return {"miners": [
-        miner.serialize for miner in
-        wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])
-    ]}
+    return {"miners": [miner.serialize for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])]}
 
 
-@m.user_endpoint(path=["miner", "wallet"], requires={
-    "service_uuid": UUID(),
-    "wallet_uuid": UUID()
-})
+@m.user_endpoint(path=["miner", "wallet"], requires={"service_uuid": UUID(), "wallet_uuid": UUID()})
 def set_wallet(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     wallet_uuid: str = data["wallet_uuid"]
@@ -52,11 +42,9 @@ def set_wallet(data: dict, user: str) -> dict:
 
     mined_coins: int = miner.update_miner()
     if mined_coins > 0:
-        m.contact_microservice("currency", ["put"], {
-            "destination_uuid": miner.wallet,
-            "amount": mined_coins,
-            "create_transaction": False
-        })
+        m.contact_microservice(
+            "currency", ["put"], {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False}
+        )
 
     miner.wallet: str = wallet_uuid
     wrapper.session.commit()
@@ -64,10 +52,7 @@ def set_wallet(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "power"], requires={
-    "service_uuid": UUID(),
-    "power": Integer(minimum=0, maximum=100)
-})
+@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(), "power": Integer(minimum=0, maximum=100)})
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     power: int = data["power"]
@@ -84,11 +69,9 @@ def set_power(data: dict, user: str) -> dict:
 
     mined_coins: int = miner.update_miner()
     if mined_coins > 0:
-        m.contact_microservice("currency", ["put"], {
-            "destination_uuid": miner.wallet,
-            "amount": mined_coins,
-            "create_transaction": False
-        })
+        m.contact_microservice(
+            "currency", ["put"], {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False}
+        )
 
     miner.power: int = power
     if power >= 10:
@@ -104,5 +87,8 @@ def set_power(data: dict, user: str) -> dict:
 
 @m.microservice_endpoint(path=["miner", "collect"])
 def collect(data: dict, microservice: str) -> dict:
-    return {"coins": sum(miner.update_miner() for miner in
-                         wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"]))}
+    return {
+        "coins": sum(
+            miner.update_miner() for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])
+        )
+    }

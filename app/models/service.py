@@ -1,6 +1,6 @@
 from typing import Union
 
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Float
 
 from app import wrapper
 from vars import config
@@ -17,18 +17,19 @@ class Service(wrapper.Base):
     running_port: Union[Column, int] = Column(Integer)
     consumption: Union[Column, int] = Column(Integer)
     part_owner: Union[Column, str] = Column(String(36))
+    speed: Union[Column, float] = Column(Float)
 
     @property
     def serialize(self):
         _: str = self.uuid
         d: dict = self.__dict__.copy()
 
-        del d['_sa_instance_state']
+        del d["_sa_instance_state"]
 
         return d
 
     @staticmethod
-    def create(uuid: str, device: str, owner: str, name: str) -> 'Service':
+    def create(uuid: str, device: str, owner: str, name: str) -> "Service":
         """
         Creates a new service.
 
@@ -46,7 +47,7 @@ class Service(wrapper.Base):
             running=config["services"][name]["auto_start"],
             name=name,
             running_port=config["services"][name]["default_port"],
-            consumption=config["services"][name]["consumption"]
+            consumption=config["services"][name]["consumption"],
         )
 
         wrapper.session.add(service)

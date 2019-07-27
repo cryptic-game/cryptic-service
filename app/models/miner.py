@@ -7,7 +7,7 @@ from app import wrapper
 
 
 class Miner(wrapper.Base):
-    __tablename__: str = 'miner'
+    __tablename__: str = "miner"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
@@ -19,18 +19,13 @@ class Miner(wrapper.Base):
         _: str = self.uuid
         d: dict = self.__dict__.copy()
 
-        del d['_sa_instance_state']
+        del d["_sa_instance_state"]
 
         return d
 
     @staticmethod
-    def create(uuid: str, wallet: str) -> 'Miner':
-        miner: Miner = Miner(
-            uuid=uuid,
-            wallet=wallet,
-            started=None,
-            power=0
-        )
+    def create(uuid: str, wallet: str) -> "Miner":
+        miner: Miner = Miner(uuid=uuid, wallet=wallet, started=None, power=0)
 
         wrapper.session.add(miner)
         wrapper.session.commit()

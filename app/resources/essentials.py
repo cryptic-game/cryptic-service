@@ -1,13 +1,14 @@
 from math import exp, sqrt
 
 from uuid import uuid4
-
+from typing import Tuple
 from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
 from resources import game_content
 from schemes import invalid_request, wallet_not_found
+from vars import config
 
 
 def exists_device(device: str) -> bool:
@@ -15,8 +16,9 @@ def exists_device(device: str) -> bool:
 
 
 def controls_device(device: str, user: str) -> bool:
-    return m.contact_microservice("device", ["owner"], {"device_uuid": device})["owner"] == user or \
-           game_content.part_owner(device, user)
+    return m.contact_microservice("device", ["owner"], {"device_uuid": device})[
+        "owner"
+    ] == user or game_content.part_owner(device, user)
 
 
 def exists_wallet(wallet: str) -> bool:
@@ -51,4 +53,19 @@ def create_service(name: str, data: dict, user: str):
         Miner.create(uuid, data["wallet_uuid"])
 
     service: Service = Service.create(uuid, data["device_uuid"], user, name)
+
+    r_data: dict = {"device_uuid": service.device, "service_uuid": service.uuid}
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
+        m.contact_microservice("device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"]})
+    )
+
+    expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
+
+    speed: float = game_content.calculate_speed(expected_per, given_per)
+
+    wrapper.session.commit()
+
+    service.speed = speed
+    wrapper.session.commit()
     return service.serialize

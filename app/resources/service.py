@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy import func
 
@@ -18,8 +18,9 @@ switch: dict = {  # this is just for tools, its a more smooth way of a "switch" 
 
 @m.user_endpoint(path=["public_info"], requires=standard_scheme)
 def public_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
-                                                                          device=data["device_uuid"]).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(
+        uuid=data["service_uuid"], device=data["device_uuid"]
+    ).first()
     if service is None or service.running_port is None or not service.running:
         return unknown_service
     return service.public_data()
@@ -35,11 +36,9 @@ def use(data: dict, user: str) -> dict:
     if not isinstance(device_uuid, str) or not isinstance(service_uuid, str):
         return invalid_request
 
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid,
-                                                                          device=device_uuid).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid, device=device_uuid).first()
 
-    if service is None or (service.owner != user
-                           and not game_content.part_owner(device_uuid, user)):
+    if service is None or (service.owner != user and not game_content.part_owner(device_uuid, user)):
         return unknown_service
 
     if service.name not in switch:
@@ -50,8 +49,9 @@ def use(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["private_info"], requires=standard_scheme)
 def private_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
-                                                                          device=data["device_uuid"]).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(
+        uuid=data["service_uuid"], device=data["device_uuid"]
+    ).first()
 
     if service is None:
         return unknown_service
@@ -64,8 +64,9 @@ def private_info(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["turn_off_on"], requires=standard_scheme)
 def turnoff_on(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"],
-                                                                          device=data["device_uuid"]).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(
+        uuid=data["service_uuid"], device=data["device_uuid"]
+    ).first()
 
     if service is None:
         return service_not_found
@@ -84,8 +85,7 @@ def turnoff_on(data: dict, user: str) -> dict:
 def delete_service(data: dict, user: str) -> dict:
     device_uuid: str = data["device_uuid"]
     service_uuid: str = data["service_uuid"]
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid,
-                                                                          device=device_uuid).first()
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid, device=device_uuid).first()
 
     if service is None:
         return service_not_found
@@ -100,11 +100,11 @@ def delete_service(data: dict, user: str) -> dict:
         miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service.uuid).first()
         mined_coins: int = miner.update_miner()
         if mined_coins > 0:
-            m.contact_microservice("currency", ["put"], {
-                "destination_uuid": miner.wallet,
-                "amount": mined_coins,
-                "create_transaction": False
-            })
+            m.contact_microservice(
+                "currency",
+                ["put"],
+                {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False},
+            )
         wrapper.session.delete(miner)
 
     wrapper.session.delete(service)
@@ -113,17 +113,14 @@ def delete_service(data: dict, user: str) -> dict:
     return {"ok": True}
 
 
-@m.user_endpoint(path=["list"], requires={
-    "device_uuid": UUID()
-})
+@m.user_endpoint(path=["list"], requires={"device_uuid": UUID()})
 def list_services(data: dict, user: str) -> dict:
     if not controls_device(data["device_uuid"], user):
         return permission_denied
 
     return {
         "services": [
-            service.serialize for service in
-            wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
+            service.serialize for service in wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
         ]
     }
 
@@ -149,9 +146,7 @@ def create(data: dict, user: str) -> dict:
         return permission_denied
 
     service_count: int = wrapper.session.query(func.count(Service.name)).filter(
-        Service.owner == user,
-        Service.device == device_uuid,
-        Service.name == name
+        Service.owner == user, Service.device == device_uuid, Service.name == name
     ).first()[0]
     if service_count != 0:
         return already_own_this_service
@@ -159,9 +154,7 @@ def create(data: dict, user: str) -> dict:
     return create_service(name, data, user)
 
 
-@m.user_endpoint(path=["part_owner"], requires={
-    "device_uuid": UUID()
-})
+@m.user_endpoint(path=["part_owner"], requires={"device_uuid": UUID()})
 def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
@@ -170,3 +163,21 @@ def part_owner(data: dict, user: str) -> dict:
 def check_part_owner(data: dict, microservice: str) -> dict:
     # all these requests are trusted
     return {"ok": game_content.part_owner(data["device_uuid"], data["user_uuid"])}
+
+
+@m.microservice_endpoint(path=["hardware", "scale"])
+def hardware_scale(data: dict, mircoservice: str):
+
+    service: Service = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"]).first()
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(data)
+
+    expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
+        config["services"][service.name]["needs"]
+    )
+
+    speed: float = game_content.calculate_speed(expected_per, given_per)
+
+    service.speed = (service.speed + speed) / 2
+
+    wrapper.session.commit()

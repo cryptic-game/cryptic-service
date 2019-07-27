@@ -26,14 +26,6 @@ service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
 
 attack_not_running: dict = {"error": "attack_not_running"}
 
-attack_scheme: dict = {
-    "device_uuid": UUID(),
-    "service_uuid": UUID(),
-    "target_service": UUID(),
-    "target_device": UUID()
-}
+attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
 
-standard_scheme: dict = {
-    "device_uuid": UUID(),
-    "service_uuid": UUID(),
-}
+standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}
