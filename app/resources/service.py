@@ -7,7 +7,7 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, create_service
+from resources.essentials import exists_device, controls_device, create_service, update_miner
 from schemes import *
 from vars import config
 
@@ -166,8 +166,7 @@ def check_part_owner(data: dict, microservice: str) -> dict:
 
 
 @m.microservice_endpoint(path=["hardware", "scale"])
-def hardware_scale(data: dict, mircoservice: str):
-
+def hardware_scale(data: dict, mircoservice: str) -> dict:
     service: Service = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"]).first()
 
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(data)
@@ -181,3 +180,37 @@ def hardware_scale(data: dict, mircoservice: str):
     service.speed = (service.speed + speed) / 2
 
     wrapper.session.commit()
+
+    return success_scheme
+
+
+@m.microservice_endpoint(path=["hardware", "stop"])
+def hardware_stop(data: dict, microservice: str) -> dict:
+    delete: bool = data["delete"]
+
+    for service in wrapper.session.query(Service).filter_by(device=data["device_uuid"]):
+        if service.name == "bruteforce":
+            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
+            bruteforce.target_device = None
+            bruteforce.target_service = None
+            bruteforce.started = None
+
+            if delete:
+                wrapper.session.delete(bruteforce)
+
+        elif service.name == "miner":
+            miner: Miner = wrapper.session.query(Miner).get(service.uuid)
+            update_miner(miner)
+            miner.power: int = 0
+            miner.started = None
+
+            if delete:
+                wrapper.session.delete(miner)
+
+        service.running: bool = False
+        if delete:
+            wrapper.session.delete(service)
+
+    wrapper.session.commit()
+
+    return success_scheme

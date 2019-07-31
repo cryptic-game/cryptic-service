@@ -1,7 +1,7 @@
 from math import exp, sqrt
-
-from uuid import uuid4
 from typing import Tuple
+from uuid import uuid4
+
 from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
@@ -34,6 +34,14 @@ def calculate_mcs(device: str, power: int) -> float:
     clock_rate: int = 800
     ram: int = 512
     return (clock_rate * (3 + cores) / 10500 + sqrt(cores * clock_rate * ram) / 30000) * (1 - exp(-0.0231 * power))
+
+
+def update_miner(miner: Miner):
+    mined_coins: int = miner.update_miner()
+    if mined_coins > 0:
+        m.contact_microservice(
+            "currency", ["put"], {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False}
+        )
 
 
 def create_service(name: str, data: dict, user: str):

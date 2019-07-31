@@ -5,7 +5,7 @@ from scheme import Integer
 from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, exists_wallet
+from resources.essentials import exists_device, controls_device, exists_wallet, update_miner
 from schemes import *
 
 
@@ -40,11 +40,7 @@ def set_wallet(data: dict, user: str) -> dict:
     if not exists_wallet(wallet_uuid):
         return wallet_not_found
 
-    mined_coins: int = miner.update_miner()
-    if mined_coins > 0:
-        m.contact_microservice(
-            "currency", ["put"], {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False}
-        )
+    update_miner(miner)
 
     miner.wallet: str = wallet_uuid
     wrapper.session.commit()
@@ -67,11 +63,7 @@ def set_power(data: dict, user: str) -> dict:
     if not controls_device(service.device, user):
         return permission_denied
 
-    mined_coins: int = miner.update_miner()
-    if mined_coins > 0:
-        m.contact_microservice(
-            "currency", ["put"], {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False}
-        )
+    update_miner(miner)
 
     miner.power: int = power
     if power >= 10:

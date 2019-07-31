@@ -40,7 +40,7 @@ def part_owner(device: str, user: str) -> bool:
 
 
 def dict2tuple(data: dict) -> Tuple[float, float, float, float, float]:
-    return (data["cpu"], data["ram"], data["gpu"], data["disk"], data["network"])
+    return data["cpu"], data["ram"], data["gpu"], data["disk"], data["network"]
 
 
 def calculate_speed(
