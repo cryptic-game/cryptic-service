@@ -7,7 +7,7 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, create_service, update_miner
+from resources.essentials import exists_device, controls_device, create_service, stop_services, delete_services
 from schemes import *
 from vars import config
 
@@ -186,31 +186,11 @@ def hardware_scale(data: dict, mircoservice: str) -> dict:
 
 @m.microservice_endpoint(path=["hardware", "stop"])
 def hardware_stop(data: dict, microservice: str) -> dict:
-    delete: bool = data["delete"]
+    stop_services(data["device_uuid"])
+    return success_scheme
 
-    for service in wrapper.session.query(Service).filter_by(device=data["device_uuid"]):
-        if service.name == "bruteforce":
-            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
-            bruteforce.target_device = None
-            bruteforce.target_service = None
-            bruteforce.started = None
 
-            if delete:
-                wrapper.session.delete(bruteforce)
-
-        elif service.name == "miner":
-            miner: Miner = wrapper.session.query(Miner).get(service.uuid)
-            update_miner(miner)
-            miner.power: int = 0
-            miner.started = None
-
-            if delete:
-                wrapper.session.delete(miner)
-
-        service.running: bool = False
-        if delete:
-            wrapper.session.delete(service)
-
-    wrapper.session.commit()
-
+@m.microservice_endpoint(path=["hardware", "delete"])
+def hardware_delete(data: dict, microservice: str) -> dict:
+    delete_services(data["device_uuid"])
     return success_scheme

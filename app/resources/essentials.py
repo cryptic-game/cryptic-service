@@ -77,3 +77,35 @@ def create_service(name: str, data: dict, user: str):
     service.speed = speed
     wrapper.session.commit()
     return service.serialize
+
+
+def stop_services(device_uuid: str):
+    for service in wrapper.session.query(Service).filter_by(device=device_uuid):
+        if service.name == "bruteforce":
+            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
+            bruteforce.target_device = None
+            bruteforce.target_service = None
+            bruteforce.started = None
+        elif service.name == "miner":
+            miner: Miner = wrapper.session.query(Miner).get(service.uuid)
+            update_miner(miner)
+            miner.power: int = 0
+            miner.started = None
+        service.running: bool = False
+
+    wrapper.session.commit()
+
+
+def delete_services(device_uuid: str):
+    for service in wrapper.session.query(Service).filter_by(device=device_uuid):
+        if service.name == "bruteforce":
+            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
+            wrapper.session.delete(bruteforce)
+        elif service.name == "miner":
+            miner: Miner = wrapper.session.query(Miner).get(service.uuid)
+            update_miner(miner)
+            wrapper.session.delete(miner)
+
+        wrapper.session.delete(service)
+
+    wrapper.session.commit()
