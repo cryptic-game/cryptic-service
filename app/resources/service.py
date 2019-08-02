@@ -74,7 +74,7 @@ def turnoff_on(data: dict, user: str) -> dict:
     if user != service.owner:
         return permission_denied
 
-    service.running: bool = not service.running
+    service.running = not service.running
 
     wrapper.session.commit()
 

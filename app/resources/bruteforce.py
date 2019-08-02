@@ -62,7 +62,7 @@ def stop(data: dict, user: str):
     if target_service is None:
         return service_not_found
 
-    pen_time: float = time.time() - service.started
+    pen_time: float = (time.time() - service.started) * service.speed
 
     random_value: float = random.random() + 0.1
 

@@ -15,7 +15,6 @@ class Service(wrapper.Base):
     name: Union[Column, str] = Column(String(32))
     running: Union[Column, bool] = Column(Boolean)
     running_port: Union[Column, int] = Column(Integer)
-    consumption: Union[Column, int] = Column(Integer)
     part_owner: Union[Column, str] = Column(String(36))
     speed: Union[Column, float] = Column(Float)
 
@@ -47,7 +46,6 @@ class Service(wrapper.Base):
             running=config["services"][name]["auto_start"],
             name=name,
             running_port=config["services"][name]["default_port"],
-            consumption=config["services"][name]["consumption"],
         )
 
         wrapper.session.add(service)

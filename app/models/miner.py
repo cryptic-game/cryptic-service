@@ -12,7 +12,6 @@ class Miner(wrapper.Base):
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
     started: Union[Column, int] = Column(BigInteger)
-    power: Union[Column, int] = Column(Integer)
 
     @property
     def serialize(self) -> dict:
@@ -41,7 +40,7 @@ class Miner(wrapper.Base):
             return 0
 
         now: int = int(time.time())
-        mined_coins: int = int(calculate_mcs(service.device, self.power) * (now - self.started))
+        mined_coins: int = int(calculate_mcs(service.device, service.speed) * (now - self.started))
         if mined_coins > 0:
             self.started: int = now
             wrapper.session.commit()

@@ -46,10 +46,4 @@ def dict2tuple(data: dict) -> Tuple[float, float, float, float, float]:
 def calculate_speed(
     edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
 ) -> float:
-    return (
-        (rdata[0] / (edata[0] * 5))
-        + (rdata[1] / (edata[1] * 5))
-        + (rdata[1] / (edata[1] * 5))
-        + (rdata[1] / (edata[1] * 5))
-        + (rdata[1] / (edata[1] * 5))
-    )
+    return min(sum(rdata) / sum(edata), 1)

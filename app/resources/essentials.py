@@ -30,10 +30,7 @@ def is_miner(service_uuid: str) -> bool:
 
 
 def calculate_mcs(device: str, power: int) -> float:
-    cores: int = 1
-    clock_rate: int = 800
-    ram: int = 512
-    return (clock_rate * (3 + cores) / 10500 + sqrt(cores * clock_rate * ram) / 30000) * (1 - exp(-0.0231 * power))
+    return power * 2
 
 
 def update_miner(miner: Miner):
@@ -89,9 +86,8 @@ def stop_services(device_uuid: str):
         elif service.name == "miner":
             miner: Miner = wrapper.session.query(Miner).get(service.uuid)
             update_miner(miner)
-            miner.power: int = 0
             miner.started = None
-        service.running: bool = False
+        service.running = False
 
     wrapper.session.commit()
 
