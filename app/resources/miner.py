@@ -1,12 +1,14 @@
-import time
+from typing import Tuple
 
-from scheme import Integer
+from scheme import Float, UUID
 
 from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, exists_wallet, update_miner
-from schemes import *
+from resources.essentials import exists_device, controls_device, exists_wallet, update_miner, change_miner_power
+from resources.game_content import calculate_speed, dict2tuple
+from vars import config
+from schemes import miner_not_found, device_not_found, wallet_not_found, permission_denied
 
 
 @m.user_endpoint(path=["miner", "get"], requires={"service_uuid": UUID()})
@@ -42,16 +44,18 @@ def set_wallet(data: dict, user: str) -> dict:
 
     update_miner(miner)
 
-    miner.wallet: str = wallet_uuid
+    miner.wallet = wallet_uuid
     wrapper.session.commit()
 
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(), "power": Integer(minimum=0, maximum=100)})
+@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(), "power": Float(minimum=0, maximum=1)})
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     power: int = data["power"]
+    if power < 0 or power > 1:
+        return {"error": "power_invalid_value"}
 
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service_uuid).first()
     if miner is None:
@@ -65,13 +69,12 @@ def set_power(data: dict, user: str) -> dict:
 
     update_miner(miner)
 
-    miner.power: int = power
-    if power >= 10:
-        service.running: bool = True
-        miner.started: int = int(time.time())
-    else:
-        service.running: bool = False
-        miner.started: float = None
+    new: Tuple[float, float, float, float, float] = change_miner_power(power, service.uuid, service.device)
+
+    speed: float = calculate_speed(dict2tuple(config["services"]["miner"]["needs"]), new)
+
+    service.speed = (service.speed + speed) / 2
+
     wrapper.session.commit()
 
     return miner.serialize

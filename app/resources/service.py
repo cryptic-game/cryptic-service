@@ -8,8 +8,20 @@ from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
 from resources.essentials import exists_device, controls_device, create_service, stop_services, delete_services
-from schemes import *
+from schemes import (
+    service_not_found,
+    device_not_found,
+    permission_denied,
+    unknown_service,
+    invalid_request,
+    service_cannot_be_used,
+    service_not_supported,
+    already_own_this_service,
+    success_scheme,
+    standard_scheme,
+)
 from vars import config
+from scheme import UUID
 
 switch: dict = {  # this is just for tools, its a more smooth way of a "switch" statement
     "portscan": game_content.portscan

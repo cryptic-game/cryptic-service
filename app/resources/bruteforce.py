@@ -5,7 +5,14 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.service import Service
 from resources.game_content import calculate_pos
-from schemes import *
+from schemes import (
+    attack_scheme,
+    service_not_found,
+    service_not_running,
+    success_scheme,
+    attack_not_running,
+    standard_scheme,
+)
 
 
 @m.user_endpoint(path=["bruteforce", "attack"], requires=attack_scheme)

@@ -1,4 +1,3 @@
-from math import exp, sqrt
 from typing import Tuple
 from uuid import uuid4
 
@@ -13,6 +12,24 @@ from vars import config
 
 def exists_device(device: str) -> bool:
     return m.contact_microservice("device", ["exist"], {"device_uuid": device})["exist"]
+
+
+def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tuple[float, float, float, float, float]:
+    return game_content.dict2tuple(
+        m.contact_microservice(
+            "device",
+            ["hardware", "scale"],
+            {
+                "service_uuid": service_uuid,
+                "device_uuid": device_uuid,
+                "cpu": ["services"]["miner"]["needs"]["cpu"] * power,
+                "ram": ["services"]["miner"]["needs"]["ram"] * power,
+                "gpu": ["services"]["miner"]["needs"]["gpu"] * power,
+                "disk": ["services"]["miner"]["needs"]["disk"] * power,
+                "network": ["services"]["miner"]["needs"]["network"] * power,
+            },
+        )
+    )
 
 
 def controls_device(device: str, user: str) -> bool:

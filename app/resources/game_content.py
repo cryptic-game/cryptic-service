@@ -1,6 +1,6 @@
 from app import wrapper
 from models.service import Service
-from schemes import *
+from schemes import invalid_request
 from vars import config
 from typing import Tuple
 

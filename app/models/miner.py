@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from sqlalchemy import Column, String, Integer, BigInteger
+from sqlalchemy import Column, String, BigInteger
 
 from app import wrapper
 
