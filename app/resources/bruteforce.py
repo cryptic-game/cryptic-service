@@ -30,9 +30,9 @@ def attack(data: dict, user: str):
     if not target_service.running:
         return service_not_running
 
-    service.target_service: str = target_service_uuid
-    service.target_device: str = target_device
-    service.started: int = int(time.time())
+    service.target_service = target_service_uuid
+    service.target_device = target_device
+    service.started = int(time.time())
     wrapper.session.commit()
 
     return success_scheme
@@ -80,7 +80,7 @@ def stop(data: dict, user: str):
 
     access: bool = False
     if random_value < calculate_pos(pen_time):
-        target_service.part_owner: str = user
+        target_service.part_owner = user
         wrapper.session.commit()
         access: bool = True
 

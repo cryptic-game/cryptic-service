@@ -22,11 +22,11 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tup
             {
                 "service_uuid": service_uuid,
                 "device_uuid": device_uuid,
-                "cpu": ["services"]["miner"]["needs"]["cpu"] * power,
-                "ram": ["services"]["miner"]["needs"]["ram"] * power,
-                "gpu": ["services"]["miner"]["needs"]["gpu"] * power,
-                "disk": ["services"]["miner"]["needs"]["disk"] * power,
-                "network": ["services"]["miner"]["needs"]["network"] * power,
+                "cpu": config["services"]["miner"]["needs"]["cpu"] * power,
+                "ram": config["services"]["miner"]["needs"]["ram"] * power,
+                "gpu": config["services"]["miner"]["needs"]["gpu"] * power,
+                "disk": config["services"]["miner"]["needs"]["disk"] * power,
+                "network": config["services"]["miner"]["needs"]["network"] * power,
             },
         )
     )
@@ -84,12 +84,10 @@ def create_service(name: str, data: dict, user: str):
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
 
-    speed: float = game_content.calculate_speed(expected_per, given_per)
+    service.speed = game_content.calculate_speed(expected_per, given_per)
 
     wrapper.session.commit()
 
-    service.speed = speed
-    wrapper.session.commit()
     return service.serialize
 
 
