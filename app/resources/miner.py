@@ -54,8 +54,6 @@ def set_wallet(data: dict, user: str) -> dict:
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     power: int = data["power"]
-    if power < 0 or power > 1:
-        return {"error": "power_invalid_value"}
 
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service_uuid).first()
     if miner is None:
