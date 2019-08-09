@@ -46,7 +46,7 @@ def is_miner(service_uuid: str) -> bool:
     return wrapper.session.query(Service).filter_by(uuid=service_uuid, name="miner").first() is not None
 
 
-def calculate_mcs(device: str, power: int) -> float:
+def calculate_mcs(power: int) -> float:
     return power * 2
 
 

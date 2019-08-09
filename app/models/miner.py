@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import Column, String, BigInteger, Float
 
 from app import wrapper
 
@@ -12,6 +12,8 @@ class Miner(wrapper.Base):
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
     started: Union[Column, int] = Column(BigInteger)
+    power: Union[Column, int] = Column(Float)
+    mcs: Union[Column, float] = Column(Float)
 
     @property
     def serialize(self) -> dict:
@@ -24,7 +26,7 @@ class Miner(wrapper.Base):
 
     @staticmethod
     def create(uuid: str, wallet: str) -> "Miner":
-        miner: Miner = Miner(uuid=uuid, wallet=wallet, started=None, power=0)
+        miner: Miner = Miner(uuid=uuid, wallet=wallet, started=None, power=0, mcs=0)
 
         wrapper.session.add(miner)
         wrapper.session.commit()
@@ -32,7 +34,6 @@ class Miner(wrapper.Base):
         return miner
 
     def update_miner(self) -> int:
-        from resources.essentials import calculate_mcs
         from resources.service import Service
 
         service: Service = wrapper.session.query(Service).get(self.uuid)
@@ -40,7 +41,7 @@ class Miner(wrapper.Base):
             return 0
 
         now: int = int(time.time())
-        mined_coins: int = int(calculate_mcs(service.device, service.speed) * (now - self.started))
+        mined_coins: int = int(self.mcs * (now - self.started) * service.speed)
         if mined_coins > 0:
             self.started: int = now
             wrapper.session.commit()

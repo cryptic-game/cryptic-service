@@ -5,7 +5,14 @@ from scheme import Float, UUID
 from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, exists_wallet, update_miner, change_miner_power
+from resources.essentials import (
+    exists_device,
+    controls_device,
+    exists_wallet,
+    update_miner,
+    change_miner_power,
+    calculate_mcs,
+)
 from resources.game_content import calculate_speed, dict2tuple
 from vars import config
 from schemes import miner_not_found, device_not_found, wallet_not_found, permission_denied
@@ -70,6 +77,8 @@ def set_power(data: dict, user: str) -> dict:
     new: Tuple[float, float, float, float, float] = change_miner_power(power, service.uuid, service.device)
 
     service.speed = calculate_speed(dict2tuple(config["services"]["miner"]["needs"]), new)
+    miner.mcs = calculate_mcs(power)
+    miner.power = power
 
     wrapper.session.commit()
 
