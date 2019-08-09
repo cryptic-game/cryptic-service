@@ -158,5 +158,5 @@ venv.bak/
 .lock
 Pipfile.lock
 data/
-app/Pipfile.lock
+#app/Pipfile.lock
 idea/
