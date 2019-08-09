@@ -8,7 +8,8 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, create_service, stop_services, delete_services
+from resources.essentials import exists_device, controls_device, create_service, stop_services, delete_services, \
+    delete_one_service
 from schemes import (
     service_not_found,
     device_not_found,
@@ -105,22 +106,7 @@ def delete_service(data: dict, user: str) -> dict:
     if user != m.contact_microservice("device", ["owner"], {"device_uuid": device_uuid})["owner"]:
         return permission_denied
 
-    if service.name == "bruteforce":
-        bruteforce: Bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=service.uuid).first()
-        wrapper.session.delete(bruteforce)
-    elif service.name == "miner":
-        miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service.uuid).first()
-        mined_coins: int = miner.update_miner()
-        if mined_coins > 0:
-            m.contact_microservice(
-                "currency",
-                ["put"],
-                {"destination_uuid": miner.wallet, "amount": mined_coins, "create_transaction": False},
-            )
-        wrapper.session.delete(miner)
-
-    wrapper.session.delete(service)
-    wrapper.session.commit()
+    delete_one_service(service)
 
     return {"ok": True}
 
@@ -178,7 +164,7 @@ def check_part_owner(data: dict, microservice: str) -> dict:
 
 
 @m.microservice_endpoint(path=["hardware", "scale"])
-def hardware_scale(data: dict, mircoservice: str) -> dict:
+def hardware_scale(data: dict, microservice: str) -> dict:
     service: Service = wrapper.session.query(Service).filter_by(uuid=data["service_uuid"]).first()
 
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(data)

@@ -57,7 +57,7 @@ def set_wallet(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(), "power": Float(minimum=0, maximum=1)})
+@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(), "power": Float(minimum=0.0, maximum=1.0)})
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     power: int = data["power"]

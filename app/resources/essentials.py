@@ -34,8 +34,8 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tup
 
 def controls_device(device: str, user: str) -> bool:
     return m.contact_microservice("device", ["owner"], {"device_uuid": device})[
-        "owner"
-    ] == user or game_content.part_owner(device, user)
+               "owner"
+           ] == user or game_content.part_owner(device, user)
 
 
 def exists_wallet(wallet: str) -> bool:
@@ -79,7 +79,8 @@ def create_service(name: str, data: dict, user: str):
     r_data: dict = {"device_uuid": service.device, "service_uuid": service.uuid}
 
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice("device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"]})
+        m.contact_microservice("device", ["hardware", "register"],
+                               {**r_data, **config["services"][name]["needs"], "user": user})
     )
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
@@ -89,6 +90,19 @@ def create_service(name: str, data: dict, user: str):
     wrapper.session.commit()
 
     return service.serialize
+
+
+def delete_one_service(service: Service):
+    if service.name == "bruteforce":
+        bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
+        wrapper.session.delete(bruteforce)
+    elif service.name == "miner":
+        miner: Miner = wrapper.session.query(Miner).get(service.uuid)
+        update_miner(miner)
+        wrapper.session.delete(miner)
+
+    wrapper.session.delete(service)
+    wrapper.session.commit()
 
 
 def stop_services(device_uuid: str):
@@ -109,14 +123,4 @@ def stop_services(device_uuid: str):
 
 def delete_services(device_uuid: str):
     for service in wrapper.session.query(Service).filter_by(device=device_uuid):
-        if service.name == "bruteforce":
-            bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
-            wrapper.session.delete(bruteforce)
-        elif service.name == "miner":
-            miner: Miner = wrapper.session.query(Miner).get(service.uuid)
-            update_miner(miner)
-            wrapper.session.delete(miner)
-
-        wrapper.session.delete(service)
-
-    wrapper.session.commit()
+        delete_one_service(service)
