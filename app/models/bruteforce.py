@@ -1,6 +1,7 @@
+import time
 from typing import Union
 
-from sqlalchemy import Column, BigInteger, String
+from sqlalchemy import Column, BigInteger, String, Float
 
 from app import wrapper
 
@@ -12,6 +13,7 @@ class Bruteforce(wrapper.Base):
     started: Union[Column, int] = Column(BigInteger)
     target_service: Union[Column, str] = Column(String(36))
     target_device: Union[Column, str] = Column(String(36))
+    progress: Union[Column, float] = Column(Float)
 
     @property
     def serialize(self):
@@ -30,9 +32,15 @@ class Bruteforce(wrapper.Base):
         :return: New DeviceModel
         """
 
-        service = Bruteforce(uuid=uuid, started=None, target_service=None, target_device=None)
+        service = Bruteforce(uuid=uuid, started=None, target_service=None, target_device=None, progress=0)
 
         wrapper.session.add(service)
         wrapper.session.commit()
 
         return service
+
+    def update_progress(self, speed: float):
+        now: int = int(time.time())
+        self.progress += (now - self.started) * speed
+        self.started = now
+        wrapper.session.commit()

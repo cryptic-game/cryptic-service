@@ -1,5 +1,6 @@
 from typing import Optional, Tuple
 
+from scheme import UUID
 from sqlalchemy import func
 
 import resources.game_content as game_content
@@ -21,7 +22,6 @@ from schemes import (
     standard_scheme,
 )
 from vars import config
-from scheme import UUID
 
 switch: dict = {  # this is just for tools, its a more smooth way of a "switch" statement
     "portscan": game_content.portscan
@@ -187,9 +187,10 @@ def hardware_scale(data: dict, mircoservice: str) -> dict:
         config["services"][service.name]["needs"]
     )
 
-    speed: float = game_content.calculate_speed(expected_per, given_per)
-
-    service.speed = (service.speed + speed) / 2
+    if service.name == "bruteforce":
+        bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
+        bruteforce.update_progress(service.speed)
+    service.speed = game_content.calculate_speed(expected_per, given_per)
 
     wrapper.session.commit()
 

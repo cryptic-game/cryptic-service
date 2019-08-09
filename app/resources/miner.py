@@ -69,9 +69,7 @@ def set_power(data: dict, user: str) -> dict:
 
     new: Tuple[float, float, float, float, float] = change_miner_power(power, service.uuid, service.device)
 
-    speed: float = calculate_speed(dict2tuple(config["services"]["miner"]["needs"]), new)
-
-    service.speed = (service.speed + speed) / 2
+    service.speed = calculate_speed(dict2tuple(config["services"]["miner"]["needs"]), new)
 
     wrapper.session.commit()
 
