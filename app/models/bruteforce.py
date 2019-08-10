@@ -40,7 +40,8 @@ class Bruteforce(wrapper.Base):
         return service
 
     def update_progress(self, speed: float):
-        now: int = int(time.time())
-        self.progress += (now - self.started) * speed
-        self.started = now
-        wrapper.session.commit()
+        if self.started is not None:
+            now: int = int(time.time())
+            self.progress += (now - self.started) * speed
+            self.started = now
+            wrapper.session.commit()

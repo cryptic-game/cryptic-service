@@ -74,9 +74,7 @@ def create_service(name: str, data: dict, user: str):
             return wallet_not_found
         Miner.create(uuid, data["wallet_uuid"])
 
-    service: Service = Service.create(uuid, data["device_uuid"], user, name)
-
-    r_data: dict = {"device_uuid": service.device, "service_uuid": service.uuid}
+    r_data: dict = {"device_uuid": data["device_uuid"], "service_uuid": uuid}
 
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
         m.contact_microservice("device", ["hardware", "register"],
@@ -85,9 +83,8 @@ def create_service(name: str, data: dict, user: str):
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
 
-    service.speed = game_content.calculate_speed(expected_per, given_per)
-
-    wrapper.session.commit()
+    service: Service = Service.create(uuid, data["device_uuid"], user, name,
+                                      game_content.calculate_speed(expected_per, given_per))
 
     return service.serialize
 

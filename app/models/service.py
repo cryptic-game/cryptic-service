@@ -28,7 +28,7 @@ class Service(wrapper.Base):
         return d
 
     @staticmethod
-    def create(uuid: str, device: str, owner: str, name: str) -> "Service":
+    def create(uuid: str, device: str, owner: str, name: str, speed: float) -> "Service":
         """
         Creates a new service.
 
@@ -36,6 +36,7 @@ class Service(wrapper.Base):
         :param device: uuid of the associated device
         :param owner: uuid of the owner
         :param name: name of the service
+        :param speed: initial speed of the service
         :return: New DeviceModel
         """
 
@@ -46,6 +47,7 @@ class Service(wrapper.Base):
             running=config["services"][name]["auto_start"],
             name=name,
             running_port=config["services"][name]["default_port"],
+            speed=speed,
         )
 
         wrapper.session.add(service)

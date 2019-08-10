@@ -134,7 +134,7 @@ def create(data: dict, user: str) -> dict:
     if not isinstance(device_uuid, str) or not isinstance(name, str):
         return invalid_request
 
-    if name not in config["services"].keys():
+    if name not in config["services"]:
         return service_not_supported
 
     if not exists_device(device_uuid):
