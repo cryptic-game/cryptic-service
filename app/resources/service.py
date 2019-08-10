@@ -8,8 +8,14 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, create_service, stop_services, delete_services, \
-    delete_one_service
+from resources.essentials import (
+    exists_device,
+    controls_device,
+    create_service,
+    stop_services,
+    delete_services,
+    delete_one_service,
+)
 from schemes import (
     service_not_found,
     device_not_found,
@@ -176,7 +182,7 @@ def hardware_scale(data: dict, microservice: str) -> dict:
     if service.name == "bruteforce":
         bruteforce: Bruteforce = wrapper.session.query(Bruteforce).get(service.uuid)
         bruteforce.update_progress(service.speed)
-    service.speed = game_content.calculate_speed(expected_per, given_per)
+    service.speed = config["services"][service.name]["speedm"](expected_per, given_per)
 
     wrapper.session.commit()
 

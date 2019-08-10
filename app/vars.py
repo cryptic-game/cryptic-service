@@ -1,4 +1,24 @@
 # In game specific stuff
+from typing import Tuple
+
+
+def calculate_speed_miner(
+    edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
+) -> float:
+    return min(sum(rdata) / sum(edata), 1)
+
+
+def calculate_speed_bruteforce(
+    edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
+) -> float:
+    return min(sum(rdata) / sum(edata), 1)
+
+
+def standard_speed(
+    edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
+) -> float:
+    return min(sum(rdata) / sum(edata), 1)
+
 
 config: dict = {
     "CHANCE": 20,
@@ -9,6 +29,7 @@ config: dict = {
             "allow_remote_access": True,
             "auto_start": True,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "speedm": standard_speed,
         },
         "telnet": {
             "default_port": 23,
@@ -16,6 +37,7 @@ config: dict = {
             "allow_remote_access": True,
             "auto_start": True,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "speedm": standard_speed,
         },
         "portscan": {
             "default_port": None,
@@ -23,6 +45,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "speedm": standard_speed,
         },
         "bruteforce": {
             "default_port": None,
@@ -30,6 +53,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "speedm": calculate_speed_bruteforce,
         },
         "miner": {
             "default_port": None,
@@ -37,6 +61,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "speedm": calculate_speed_miner,
         },
     },
 }

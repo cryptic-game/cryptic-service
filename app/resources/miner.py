@@ -76,7 +76,7 @@ def set_power(data: dict, user: str) -> dict:
 
     new: Tuple[float, float, float, float, float] = change_miner_power(power, service.uuid, service.device)
 
-    service.speed = calculate_speed(dict2tuple(config["services"]["miner"]["needs"]), new)
+    service.speed = config["services"][service.name]["speedm"](dict2tuple(config["services"]["miner"]["needs"]), new)
     miner.mcs = calculate_mcs(power)
     miner.power = power
 

@@ -34,8 +34,8 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tup
 
 def controls_device(device: str, user: str) -> bool:
     return m.contact_microservice("device", ["owner"], {"device_uuid": device})[
-               "owner"
-           ] == user or game_content.part_owner(device, user)
+        "owner"
+    ] == user or game_content.part_owner(device, user)
 
 
 def exists_wallet(wallet: str) -> bool:
@@ -77,14 +77,16 @@ def create_service(name: str, data: dict, user: str):
     r_data: dict = {"device_uuid": data["device_uuid"], "service_uuid": uuid}
 
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice("device", ["hardware", "register"],
-                               {**r_data, **config["services"][name]["needs"], "user": user})
+        m.contact_microservice(
+            "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
+        )
     )
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
 
-    service: Service = Service.create(uuid, data["device_uuid"], user, name,
-                                      game_content.calculate_speed(expected_per, given_per))
+    service: Service = Service.create(
+        uuid, data["device_uuid"], user, name, config["services"][name]["speedm"](expected_per, given_per)
+    )
 
     return service.serialize
 
