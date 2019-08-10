@@ -100,8 +100,13 @@ def delete_one_service(service: Service):
         update_miner(miner)
         wrapper.session.delete(miner)
 
+    stop_service(service.device, service.uuid)
     wrapper.session.delete(service)
     wrapper.session.commit()
+
+
+def stop_service(device_uuid: str, service_uuid: str) -> None:
+    m.contact_microservice("device", ["hardware", "stop"], {"device_uuid": device_uuid, "service_uuid": service_uuid})
 
 
 def stop_services(device_uuid: str):

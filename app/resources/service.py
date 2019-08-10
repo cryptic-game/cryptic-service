@@ -15,6 +15,7 @@ from resources.essentials import (
     stop_services,
     delete_services,
     delete_one_service,
+    stop_service,
 )
 from schemes import (
     service_not_found,
@@ -94,6 +95,8 @@ def turnoff_on(data: dict, user: str) -> dict:
         return permission_denied
 
     service.running = not service.running
+    if not service.running:
+        stop_service(service.device, service.uuid)
 
     wrapper.session.commit()
 
