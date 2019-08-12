@@ -42,21 +42,13 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str, user: 
 
 
 def controls_device(device: str, user: str) -> bool:
-    return m.contact_microservice("device", ["owner"], {"device_uuid": device})[
+    return m.contact_microservice("device", ["owner"], {"device_uuid": device}).get(
         "owner"
-    ] == user or game_content.part_owner(device, user)
+    ) == user or game_content.part_owner(device, user)
 
 
 def exists_wallet(wallet: str) -> bool:
     return m.contact_microservice("currency", ["exists"], {"source_uuid": wallet})["exists"]
-
-
-def is_miner(service_uuid: str) -> bool:
-    return wrapper.session.query(Service).filter_by(uuid=service_uuid, name="miner").first() is not None
-
-
-def calculate_mcs(power: int) -> float:
-    return power * 2
 
 
 def update_miner(miner: Miner):

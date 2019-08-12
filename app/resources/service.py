@@ -83,8 +83,8 @@ def private_info(data: dict, user: str) -> dict:
     return service.serialize
 
 
-@m.user_endpoint(path=["turn_off_on"], requires=standard_scheme)
-def turnoff_on(data: dict, user: str) -> dict:
+@m.user_endpoint(path=["toggle"], requires=standard_scheme)
+def toggle(data: dict, user: str) -> dict:
     service: Optional[Service] = wrapper.session.query(Service).filter_by(
         uuid=data["service_uuid"], device=data["device_uuid"]
     ).first()
@@ -128,6 +128,8 @@ def delete_service(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["list"], requires={"device_uuid": UUID()})
 def list_services(data: dict, user: str) -> dict:
+    if not exists_device(data["device_uuid"]):
+        return device_not_found
     if not controls_device(data["device_uuid"], user):
         return permission_denied
 
