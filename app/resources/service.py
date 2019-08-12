@@ -6,7 +6,6 @@ from sqlalchemy import func
 import resources.game_content as game_content
 from app import m, wrapper
 from models.bruteforce import Bruteforce
-from models.miner import Miner
 from models.service import Service
 from resources.essentials import (
     exists_device,
@@ -16,6 +15,7 @@ from resources.essentials import (
     delete_services,
     delete_one_service,
     stop_service,
+    register_service,
 )
 from schemes import (
     service_not_found,
@@ -28,6 +28,7 @@ from schemes import (
     already_own_this_service,
     success_scheme,
     standard_scheme,
+    cannot_toggle_directly,
 )
 from vars import config
 
@@ -94,11 +95,16 @@ def turnoff_on(data: dict, user: str) -> dict:
     if user != service.owner:
         return permission_denied
 
-    service.running = not service.running
-    if not service.running:
-        stop_service(service.device, service.uuid)
+    if not config["services"][service.name]["toggleable"]:
+        return cannot_toggle_directly
 
+    service.running = not service.running
     wrapper.session.commit()
+
+    if service.running:
+        register_service(service.device, service.uuid, service.name, service.owner)
+    else:
+        stop_service(service.device, service.uuid, service.owner)
 
     return service.serialize
 

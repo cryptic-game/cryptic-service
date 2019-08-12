@@ -7,13 +7,12 @@ from app import wrapper
 
 
 class Miner(wrapper.Base):
-    __tablename__: str = "miner"
+    __tablename__: str = "service_miner"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     wallet: Union[Column, str] = Column(String(36))
     started: Union[Column, int] = Column(BigInteger)
     power: Union[Column, int] = Column(Float)
-    mcs: Union[Column, float] = Column(Float)
 
     @property
     def serialize(self) -> dict:
@@ -26,7 +25,7 @@ class Miner(wrapper.Base):
 
     @staticmethod
     def create(uuid: str, wallet: str) -> "Miner":
-        miner: Miner = Miner(uuid=uuid, wallet=wallet, started=None, power=0, mcs=0)
+        miner: Miner = Miner(uuid=uuid, wallet=wallet, started=None, power=0)
 
         wrapper.session.add(miner)
         wrapper.session.commit()
@@ -41,7 +40,7 @@ class Miner(wrapper.Base):
             return 0
 
         now: int = int(time.time())
-        mined_coins: int = int(self.mcs * (now - self.started) * service.speed)
+        mined_coins: int = int((now - self.started) * service.speed)
         if mined_coins > 0:
             self.started: int = now
             wrapper.session.commit()

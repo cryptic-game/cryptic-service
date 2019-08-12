@@ -14,12 +14,15 @@ def exists_device(device: str) -> bool:
     return m.contact_microservice("device", ["exist"], {"device_uuid": device})["exist"]
 
 
-def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tuple[float, float, float, float, float]:
-    return game_content.dict2tuple(
+def change_miner_power(power: float, service_uuid: str, device_uuid: str, user: str) -> float:
+    stop_service(device_uuid, service_uuid, user)
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
         m.contact_microservice(
             "device",
-            ["hardware", "scale"],
+            ["hardware", "register"],
             {
+                "user": user,
                 "service_uuid": service_uuid,
                 "device_uuid": device_uuid,
                 "cpu": config["services"]["miner"]["needs"]["cpu"] * power,
@@ -30,6 +33,12 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str) -> Tup
             },
         )
     )
+
+    expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
+        config["services"]["miner"]["needs"]
+    )
+
+    return config["services"]["miner"]["speedm"](expected_per, given_per)
 
 
 def controls_device(device: str, user: str) -> bool:
@@ -74,19 +83,11 @@ def create_service(name: str, data: dict, user: str):
             return wallet_not_found
         Miner.create(uuid, data["wallet_uuid"])
 
-    r_data: dict = {"device_uuid": data["device_uuid"], "service_uuid": uuid}
+    speed: float = 0
+    if config["services"][name]["auto_start"]:
+        speed: float = register_service(data["device_uuid"], uuid, name, user)
 
-    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice(
-            "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
-        )
-    )
-
-    expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
-
-    service: Service = Service.create(
-        uuid, data["device_uuid"], user, name, config["services"][name]["speedm"](expected_per, given_per)
-    )
+    service: Service = Service.create(uuid, data["device_uuid"], user, name, speed)
 
     return service.serialize
 
@@ -100,13 +101,29 @@ def delete_one_service(service: Service):
         update_miner(miner)
         wrapper.session.delete(miner)
 
-    stop_service(service.device, service.uuid)
+    stop_service(service.device, service.uuid, service.owner)
     wrapper.session.delete(service)
     wrapper.session.commit()
 
 
-def stop_service(device_uuid: str, service_uuid: str) -> None:
-    m.contact_microservice("device", ["hardware", "stop"], {"device_uuid": device_uuid, "service_uuid": service_uuid})
+def register_service(device_uuid: str, service_uuid: str, name: str, user: str) -> float:
+    r_data: dict = {"device_uuid": device_uuid, "service_uuid": service_uuid}
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
+        m.contact_microservice(
+            "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
+        )
+    )
+
+    expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
+
+    return config["services"][name]["speedm"](expected_per, given_per)
+
+
+def stop_service(device_uuid: str, service_uuid: str, user: str):
+    m.contact_microservice(
+        "device", ["hardware", "stop"], {"device_uuid": device_uuid, "service_uuid": service_uuid, "user": user}
+    )
 
 
 def stop_services(device_uuid: str):

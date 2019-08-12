@@ -7,7 +7,7 @@ from app import wrapper
 
 
 class Bruteforce(wrapper.Base):
-    __tablename__: str = "bruteforce"
+    __tablename__: str = "service_bruteforce"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     started: Union[Column, int] = Column(BigInteger)

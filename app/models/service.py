@@ -7,7 +7,7 @@ from vars import config
 
 
 class Service(wrapper.Base):
-    __tablename__: str = "service"
+    __tablename__: str = "service_service"
 
     uuid: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     device: Union[Column, str] = Column(String(36))
