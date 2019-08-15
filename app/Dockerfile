@@ -11,7 +11,7 @@ RUN pip install pipenv
 ADD ./Pipfile /app/
 ADD ./Pipfile.lock /app/
 
-RUN pipenv install
+RUN pipenv sync
 
 ADD . /app/
 

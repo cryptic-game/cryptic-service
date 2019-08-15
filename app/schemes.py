@@ -12,6 +12,8 @@ service_not_running: dict = {"error": "service_not_running"}
 
 permission_denied: dict = {"error": "permission_denied"}
 
+cannot_toggle_directly: dict = {"error": "cannot_toggle_directly"}
+
 device_not_found: dict = {"error": "device_not_found"}
 
 wallet_not_found: dict = {"error": "wallet_not_found"}
@@ -26,14 +28,8 @@ service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
 
 attack_not_running: dict = {"error": "attack_not_running"}
 
-attack_scheme: dict = {
-    "device_uuid": UUID(),
-    "service_uuid": UUID(),
-    "target_service": UUID(),
-    "target_device": UUID()
-}
+attack_already_running: dict = {"error": "attack_already_running"}
 
-standard_scheme: dict = {
-    "device_uuid": UUID(),
-    "service_uuid": UUID(),
-}
+attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
+
+standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}

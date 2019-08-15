@@ -1,7 +1,8 @@
 from app import wrapper
 from models.service import Service
-from schemes import *
+from schemes import invalid_request
 from vars import config
+from typing import Tuple
 
 
 def calculate_pos(waited_time: float) -> float:
@@ -22,8 +23,8 @@ def portscan(data: dict, user: str) -> dict:
 
     return {
         "services": [
-            service.public_data() for service in
-            wrapper.session.query(Service).filter_by(device=target_device).all()
+            service.public_data()
+            for service in wrapper.session.query(Service).filter_by(device=target_device).all()
             if service.running_port is not None and service.running
         ]
     }
@@ -36,3 +37,7 @@ def part_owner(device: str, user: str) -> bool:
         if service.running_port is not None and config["services"][service.name]["allow_remote_access"]:
             return True
     return False
+
+
+def dict2tuple(data: dict) -> Tuple[float, float, float, float, float]:
+    return data["cpu"], data["ram"], data["gpu"], data["disk"], data["network"]
