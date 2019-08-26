@@ -1,4 +1,4 @@
-from scheme import UUID
+from scheme import UUID, Float, Integer, Union
 
 invalid_request: dict = {"error": "invalid_request"}
 
@@ -33,3 +33,16 @@ attack_already_running: dict = {"error": "attack_already_running"}
 attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
 
 standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}
+
+device_scheme = {"device_uuid": UUID()}
+
+service_scheme = {"service_uuid": UUID()}
+
+wallet_scheme = {"wallet_uuid": UUID()}
+
+miner_set_wallet_scheme = {"service_uuid": UUID(), "wallet_uuid": UUID()}
+
+miner_set_power_scheme = {
+    "service_uuid": UUID(),
+    "power": Union([Float(minimum=0.0, maximum=1.0), Integer(minimum=0, maximum=1)]),
+}

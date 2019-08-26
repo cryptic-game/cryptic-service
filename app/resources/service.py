@@ -29,6 +29,7 @@ from schemes import (
     success_scheme,
     standard_scheme,
     cannot_toggle_directly,
+    device_scheme,
 )
 from vars import config
 
@@ -126,7 +127,7 @@ def delete_service(data: dict, user: str) -> dict:
     return {"ok": True}
 
 
-@m.user_endpoint(path=["list"], requires={"device_uuid": UUID()})
+@m.user_endpoint(path=["list"], requires=device_scheme)
 def list_services(data: dict, user: str) -> dict:
     if not exists_device(data["device_uuid"]):
         return device_not_found
@@ -169,7 +170,7 @@ def create(data: dict, user: str) -> dict:
     return create_service(name, data, user)
 
 
-@m.user_endpoint(path=["part_owner"], requires={"device_uuid": UUID()})
+@m.user_endpoint(path=["part_owner"], requires=device_scheme)
 def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
