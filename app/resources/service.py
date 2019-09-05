@@ -1,6 +1,5 @@
 from typing import Optional, Tuple
 
-from scheme import UUID
 from sqlalchemy import func
 
 import resources.game_content as game_content
@@ -124,7 +123,7 @@ def delete_service(data: dict, user: str) -> dict:
 
     delete_one_service(service)
 
-    return {"ok": True}
+    return success_scheme
 
 
 @m.user_endpoint(path=["list"], requires=device_scheme)
@@ -161,9 +160,9 @@ def create(data: dict, user: str) -> dict:
     if not controls_device(device_uuid, user):
         return permission_denied
 
-    service_count: int = wrapper.session.query(func.count(Service.name)).filter(
-        Service.owner == user, Service.device == device_uuid, Service.name == name
-    ).first()[0]
+    service_count: int = wrapper.session.query(func.count(Service.name)).filter_by(
+        owner=user, device=device_uuid, name=name
+    ).scalar()
     if service_count != 0:
         return already_own_this_service
 
