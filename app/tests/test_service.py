@@ -191,8 +191,8 @@ class TestService(TestCase):
         self.query_service.filter_by().first.return_value = mock.MagicMock()
         mock.m.contact_microservice.return_value = {"owner": "someone-else"}
         self.assertEqual(permission_denied, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        #self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        #mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "d"})
+        # self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+        # mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "d"})
 
     @patch("resources.service.delete_one_service")
     def test__user_endpoint__delete__successful(self, delete_patch):
