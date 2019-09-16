@@ -1,6 +1,5 @@
 from typing import Optional, Tuple
 
-from scheme import UUID
 from sqlalchemy import func
 
 import resources.game_content as game_content
@@ -29,6 +28,7 @@ from schemes import (
     success_scheme,
     standard_scheme,
     cannot_toggle_directly,
+    device_scheme,
 )
 from vars import config
 
@@ -118,15 +118,15 @@ def delete_service(data: dict, user: str) -> dict:
     if service is None:
         return service_not_found
 
-    if user != m.contact_microservice("device", ["owner"], {"device_uuid": device_uuid})["owner"]:
+    if not controls_device(device_uuid, user):
         return permission_denied
 
     delete_one_service(service)
 
-    return {"ok": True}
+    return success_scheme
 
 
-@m.user_endpoint(path=["list"], requires={"device_uuid": UUID()})
+@m.user_endpoint(path=["list"], requires=device_scheme)
 def list_services(data: dict, user: str) -> dict:
     if not exists_device(data["device_uuid"]):
         return device_not_found
@@ -160,16 +160,16 @@ def create(data: dict, user: str) -> dict:
     if not controls_device(device_uuid, user):
         return permission_denied
 
-    service_count: int = wrapper.session.query(func.count(Service.name)).filter(
-        Service.owner == user, Service.device == device_uuid, Service.name == name
-    ).first()[0]
+    service_count: int = wrapper.session.query(func.count(Service.name)).filter_by(
+        owner=user, device=device_uuid, name=name
+    ).scalar()
     if service_count != 0:
         return already_own_this_service
 
     return create_service(name, data, user)
 
 
-@m.user_endpoint(path=["part_owner"], requires={"device_uuid": UUID()})
+@m.user_endpoint(path=["part_owner"], requires=device_scheme)
 def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 

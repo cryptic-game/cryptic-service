@@ -1,4 +1,4 @@
-cryptic-service
+cryptic-service [![Build Status](https://travis-ci.org/cryptic-game/cryptic-service.svg?branch=master)](https://travis-ci.org/cryptic-game/cryptic-service) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cryptic-game_cryptic-service&metric=coverage)](https://sonarcloud.io/dashboard?id=cryptic-game_cryptic-service)
 ============
 
 The official service microservice of Cryptic (https://cryptic-game.net/).

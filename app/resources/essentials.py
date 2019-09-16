@@ -101,11 +101,11 @@ def delete_one_service(service: Service):
 def register_service(device_uuid: str, service_uuid: str, name: str, user: str) -> float:
     r_data: dict = {"device_uuid": device_uuid, "service_uuid": service_uuid}
 
-    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice(
-            "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
-        )
+    r_ms_data: dict = m.contact_microservice(
+        "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
     )
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(r_ms_data)
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
 

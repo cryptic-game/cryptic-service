@@ -1,15 +1,22 @@
 import time
 
-from scheme import Float, UUID, Integer, Union
-
 from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
 from resources.essentials import exists_device, controls_device, exists_wallet, update_miner, change_miner_power
-from schemes import miner_not_found, device_not_found, wallet_not_found, permission_denied
+from schemes import (
+    miner_not_found,
+    device_not_found,
+    wallet_not_found,
+    permission_denied,
+    service_scheme,
+    wallet_scheme,
+    miner_set_wallet_scheme,
+    miner_set_power_scheme,
+)
 
 
-@m.user_endpoint(path=["miner", "get"], requires={"service_uuid": UUID()})
+@m.user_endpoint(path=["miner", "get"], requires=service_scheme)
 def get(data: dict, user: str) -> dict:
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=data["service_uuid"]).first()
     if miner is None:
@@ -17,12 +24,12 @@ def get(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "list"], requires={"wallet_uuid": UUID()})
+@m.user_endpoint(path=["miner", "list"], requires=wallet_scheme)
 def list_miners(data: dict, user: str) -> dict:
     return {"miners": [miner.serialize for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])]}
 
 
-@m.user_endpoint(path=["miner", "wallet"], requires={"service_uuid": UUID(), "wallet_uuid": UUID()})
+@m.user_endpoint(path=["miner", "wallet"], requires=miner_set_wallet_scheme)
 def set_wallet(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     wallet_uuid: str = data["wallet_uuid"]
@@ -48,9 +55,7 @@ def set_wallet(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.user_endpoint(path=["miner", "power"], requires={"service_uuid": UUID(),
-                                                    "power": Union([Float(minimum=0.0, maximum=1.0),
-                                                                   Integer(minimum=0, maximum=1)])})
+@m.user_endpoint(path=["miner", "power"], requires=miner_set_power_scheme)
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
     power: int = data["power"]
