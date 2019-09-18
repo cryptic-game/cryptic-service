@@ -105,6 +105,9 @@ def register_service(device_uuid: str, service_uuid: str, name: str, user: str) 
         "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
     )
 
+    if "error" in r_ms_data:
+        return r_ms_data
+
     given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(r_ms_data)
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
