@@ -32,6 +32,41 @@ class TestEssentials(TestCase):
         self.assertEqual(expected_result, actual_result)
         mock.m.contact_microservice.assert_called_with("device", ["exist"], {"device_uuid": device})
 
+    @patch(
+        "resources.essentials.config",
+        {
+            "services": {
+                "miner": {
+                    "needs": {"cpu": 2, "ram": 3, "gpu": 5, "disk": 7, "network": 11},
+                    "speedm": lambda *args, **kwargs: (args, kwargs),
+                }
+            }
+        },
+    )
+    @patch("resources.essentials.stop_service")
+    def test__change_miner_power__could_not_start_service(self, stop_service_patch):
+        mock.m.contact_microservice.return_value = {"error": "some-error"}
+
+        expected_result = -1
+        actual_result = essentials.change_miner_power(0.8, "the-miner", "my-device", "user")
+
+        self.assertEqual(expected_result, actual_result)
+        stop_service_patch.assert_called_with("my-device", "the-miner", "user")
+        mock.m.contact_microservice.assert_called_with(
+            "device",
+            ["hardware", "register"],
+            {
+                "user": "user",
+                "service_uuid": "the-miner",
+                "device_uuid": "my-device",
+                "cpu": 2 * 0.8,
+                "ram": 3 * 0.8,
+                "gpu": 5 * 0.8,
+                "disk": 7 * 0.8,
+                "network": 11 * 0.8,
+            },
+        )
+
     @patch("resources.essentials.game_content.dict2tuple")
     @patch(
         "resources.essentials.config",
@@ -45,8 +80,9 @@ class TestEssentials(TestCase):
         },
     )
     @patch("resources.essentials.stop_service")
-    def test__change_miner_power(self, stop_service_patch, dict_patch):
+    def test__change_miner_power__successful(self, stop_service_patch, dict_patch):
         needs = {"cpu": 2, "ram": 3, "gpu": 5, "disk": 7, "network": 11}
+        mock.m.contact_microservice.return_value = mock.MagicMock()
 
         given_per = mock.MagicMock()
         expected_per = mock.MagicMock()
@@ -122,12 +158,13 @@ class TestEssentials(TestCase):
     def test__create_service__default__no_auto_start(self, service_patch):
         mock_service = mock.MagicMock()
 
-        def service_create(uuid, dev, user, name, speed):
+        def service_create(uuid, dev, user, name, speed, running):
             self.assertRegex(uuid, r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
             self.assertEqual("my-device", dev)
             self.assertEqual("user", user)
             self.assertEqual("ssh", name)
             self.assertEqual(0, speed)
+            self.assertEqual(False, running)
 
             return mock_service
 
@@ -142,16 +179,43 @@ class TestEssentials(TestCase):
     @patch("resources.essentials.config", {"services": {"ssh": {"auto_start": True}}})
     @patch("resources.essentials.register_service")
     @patch("resources.essentials.Service.create")
+    def test__create_service__default__auto_start_failed(self, service_patch, register_patch):
+        mock_service = mock.MagicMock()
+
+        def service_create(uuid, dev, user, name, speed, running):
+            register_patch.assert_called_with("my-device", uuid, "ssh", "user")
+            self.assertRegex(uuid, r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
+            self.assertEqual("my-device", dev)
+            self.assertEqual("user", user)
+            self.assertEqual("ssh", name)
+            self.assertEqual(0, speed)
+            self.assertEqual(False, running)
+
+            return mock_service
+
+        service_patch.side_effect = service_create
+        register_patch.return_value = -1
+
+        expected_result = mock_service.serialize
+        actual_result = essentials.create_service("ssh", {"device_uuid": "my-device"}, "user")
+
+        self.assertEqual(expected_result, actual_result)
+        service_patch.assert_called_once()
+
+    @patch("resources.essentials.config", {"services": {"ssh": {"auto_start": True}}})
+    @patch("resources.essentials.register_service")
+    @patch("resources.essentials.Service.create")
     def test__create_service__default__with_auto_start(self, service_patch, register_patch):
         mock_service = mock.MagicMock()
 
-        def service_create(uuid, dev, user, name, speed):
+        def service_create(uuid, dev, user, name, speed, running):
             register_patch.assert_called_with("my-device", uuid, "ssh", "user")
             self.assertRegex(uuid, r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
             self.assertEqual("my-device", dev)
             self.assertEqual("user", user)
             self.assertEqual("ssh", name)
             self.assertEqual(register_patch(), speed)
+            self.assertEqual(True, running)
 
             return mock_service
 
@@ -169,13 +233,14 @@ class TestEssentials(TestCase):
     def test__create_service__bruteforce(self, service_patch, bruteforce_patch):
         mock_service = mock.MagicMock()
 
-        def service_create(uuid, dev, user, name, speed):
+        def service_create(uuid, dev, user, name, speed, running):
             bruteforce_patch.assert_called_with(uuid)
             self.assertRegex(uuid, r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
             self.assertEqual("my-device", dev)
             self.assertEqual("user", user)
             self.assertEqual("bruteforce", name)
             self.assertEqual(0, speed)
+            self.assertEqual(False, running)
 
             return mock_service
 
@@ -215,13 +280,14 @@ class TestEssentials(TestCase):
         mock_service = mock.MagicMock()
         wallet_patch.return_value = True
 
-        def service_create(uuid, dev, user, name, speed):
+        def service_create(uuid, dev, user, name, speed, running):
             miner_patch.assert_called_with(uuid, "wallet")
             self.assertRegex(uuid, r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
             self.assertEqual("my-device", dev)
             self.assertEqual("user", user)
             self.assertEqual("miner", name)
             self.assertEqual(0, speed)
+            self.assertEqual(False, running)
 
             return mock_service
 
@@ -283,9 +349,35 @@ class TestEssentials(TestCase):
             }
         },
     )
-    @patch("resources.essentials.game_content.dict2tuple")
-    def test__register_service(self, dict_patch):
+    def test__register_service__could_not_start_service(self):
         needs = {"cpu": 42, "ram": 1337}
+        mock.m.contact_microservice.return_value = {"error": "some-error"}
+
+        expected_result = -1
+        actual_result = essentials.register_service("the-device", "ssh-service", "ssh", "user")
+
+        self.assertEqual(expected_result, actual_result)
+        mock.m.contact_microservice.assert_called_with(
+            "device",
+            ["hardware", "register"],
+            {"device_uuid": "the-device", "service_uuid": "ssh-service", "user": "user", **needs},
+        )
+
+    @patch(
+        "resources.essentials.config",
+        {
+            "services": {
+                "ssh": {
+                    "needs": {"cpu": 42, "ram": 1337},
+                    "speedm": lambda expected, given: {"expected": expected, "given": given},
+                }
+            }
+        },
+    )
+    @patch("resources.essentials.game_content.dict2tuple")
+    def test__register_service__successful(self, dict_patch):
+        needs = {"cpu": 42, "ram": 1337}
+        mock.m.contact_microservice.return_value = mock.MagicMock()
 
         expected_params = [mock.m.contact_microservice(), needs]
         results = ["given_per", "expected_per"]

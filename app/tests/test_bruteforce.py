@@ -5,7 +5,14 @@ from mock.mock_loader import mock
 from models.bruteforce import Bruteforce
 from models.service import Service
 from resources import bruteforce
-from schemes import service_not_found, service_not_running, attack_already_running, success_scheme, attack_not_running
+from schemes import (
+    service_not_found,
+    service_not_running,
+    attack_already_running,
+    success_scheme,
+    attack_not_running,
+    could_not_start_service,
+)
 
 
 class TestBruteforce(TestCase):
@@ -108,6 +115,43 @@ class TestBruteforce(TestCase):
 
         self.assertEqual(expected_result, actual_result)
         self.query_bruteforce.filter_by.assert_called_with(uuid="bruteforce-service")
+
+    @patch("resources.bruteforce.register_service")
+    def test__user_endpoint__bruteforce_attack__could_not_start_service(self, register_patch):
+        mock_bruteforce = self.query_bruteforce.filter_by().first.return_value = mock.MagicMock()
+        mock_bruteforce.uuid = "bruteforce-service"
+        mock_target_service = mock.MagicMock()
+        mock_target_service.running = True
+        mock_own_service = mock.MagicMock()
+        mock_own_service.running = False
+        expected_params = [{"uuid": "ssh-or-telnet", "device": "victim-device"}, {"uuid": "bruteforce-service"}]
+        return_values = [mock_target_service, mock_own_service]
+        register_patch.return_value = -1
+
+        def filter_by_handler(**kwargs):
+            self.assertEqual(expected_params.pop(0), kwargs)
+            out = mock.MagicMock()
+            out.first.return_value = return_values.pop(0)
+            return out
+
+        self.query_service.filter_by.side_effect = filter_by_handler
+
+        expected_result = could_not_start_service
+        actual_result = bruteforce.attack(
+            {
+                "device_uuid": "attacker-device",
+                "service_uuid": "bruteforce-service",
+                "target_device": "victim-device",
+                "target_service": "ssh-or-telnet",
+            },
+            "user",
+        )
+
+        self.assertEqual(expected_result, actual_result)
+        self.query_bruteforce.filter_by.assert_called_with(uuid="bruteforce-service")
+        register_patch.assert_called_with(
+            mock_own_service.device, mock_own_service.uuid, mock_own_service.name, mock_own_service.owner
+        )
 
     @patch("resources.bruteforce.time")
     @patch("resources.bruteforce.register_service")

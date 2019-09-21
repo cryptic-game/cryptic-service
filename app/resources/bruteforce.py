@@ -14,6 +14,7 @@ from schemes import (
     attack_not_running,
     standard_scheme,
     attack_already_running,
+    could_not_start_service,
 )
 
 
@@ -36,11 +37,15 @@ def attack(data: dict, user: str):
     if service.running:
         return attack_already_running
 
+    speed: float = register_service(service.device, service.uuid, service.name, service.owner)
+    if speed == -1:
+        return could_not_start_service
+
     bruteforce.target_service = target_service_uuid
     bruteforce.target_device = target_device
     bruteforce.started = int(time.time())
     bruteforce.progress = 0
-    service.speed = register_service(service.device, service.uuid, service.name, service.owner)
+    service.speed = speed
     service.running = True
 
     wrapper.session.commit()

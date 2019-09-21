@@ -17,22 +17,24 @@ def exists_device(device: str) -> bool:
 def change_miner_power(power: float, service_uuid: str, device_uuid: str, user: str) -> float:
     stop_service(device_uuid, service_uuid, user)
 
-    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice(
-            "device",
-            ["hardware", "register"],
-            {
-                "user": user,
-                "service_uuid": service_uuid,
-                "device_uuid": device_uuid,
-                "cpu": config["services"]["miner"]["needs"]["cpu"] * power,
-                "ram": config["services"]["miner"]["needs"]["ram"] * power,
-                "gpu": config["services"]["miner"]["needs"]["gpu"] * power,
-                "disk": config["services"]["miner"]["needs"]["disk"] * power,
-                "network": config["services"]["miner"]["needs"]["network"] * power,
-            },
-        )
+    microservice_response = m.contact_microservice(
+        "device",
+        ["hardware", "register"],
+        {
+            "user": user,
+            "service_uuid": service_uuid,
+            "device_uuid": device_uuid,
+            "cpu": config["services"]["miner"]["needs"]["cpu"] * power,
+            "ram": config["services"]["miner"]["needs"]["ram"] * power,
+            "gpu": config["services"]["miner"]["needs"]["gpu"] * power,
+            "disk": config["services"]["miner"]["needs"]["disk"] * power,
+            "network": config["services"]["miner"]["needs"]["network"] * power,
+        },
     )
+    if "error" in microservice_response:
+        return -1
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(microservice_response)
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
         config["services"]["miner"]["needs"]
@@ -76,10 +78,15 @@ def create_service(name: str, data: dict, user: str):
         Miner.create(uuid, data["wallet_uuid"])
 
     speed: float = 0
+    running: bool = False
     if config["services"][name]["auto_start"]:
         speed: float = register_service(data["device_uuid"], uuid, name, user)
+        if speed == -1:
+            speed: float = 0
+        else:
+            running: bool = True
 
-    service: Service = Service.create(uuid, data["device_uuid"], user, name, speed)
+    service: Service = Service.create(uuid, data["device_uuid"], user, name, speed, running)
 
     return service.serialize
 
@@ -101,11 +108,14 @@ def delete_one_service(service: Service):
 def register_service(device_uuid: str, service_uuid: str, name: str, user: str) -> float:
     r_data: dict = {"device_uuid": device_uuid, "service_uuid": service_uuid}
 
-    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(
-        m.contact_microservice(
-            "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
-        )
+    microservice_response: dict = m.contact_microservice(
+        "device", ["hardware", "register"], {**r_data, **config["services"][name]["needs"], "user": user}
     )
+
+    if "error" in microservice_response:
+        return -1
+
+    given_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(microservice_response)
 
     expected_per: Tuple[float, float, float, float, float] = game_content.dict2tuple(config["services"][name]["needs"])
 
