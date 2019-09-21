@@ -16,6 +16,7 @@ from schemes import (
     device_not_found,
     service_not_supported,
     already_own_this_service,
+    could_not_start_service,
 )
 
 
@@ -147,6 +148,23 @@ class TestService(TestCase):
 
         self.assertEqual(expected_result, actual_result)
         self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+
+    @patch("resources.service.config", {"services": {"ssh": {"toggleable": True}}})
+    @patch("resources.service.register_service")
+    def test__user_endpoint__toggle__could_not_start_service(self, register_patch):
+        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service.owner = "u"
+        mock_service.name = "ssh"
+        mock_service.running = False
+        register_patch.return_value = -1
+
+        expected_result = could_not_start_service
+        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u")
+
+        self.assertEqual(expected_result, actual_result)
+        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+        register_patch.assert_called_with(mock_service.device, mock_service.uuid, "ssh", "u")
+        self.assertEqual(False, mock_service.running)
 
     @patch("resources.service.config", {"services": {"ssh": {"toggleable": True}}})
     @patch("resources.service.register_service")

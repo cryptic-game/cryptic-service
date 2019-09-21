@@ -13,6 +13,7 @@ from schemes import (
     wallet_scheme,
     miner_set_wallet_scheme,
     miner_set_power_scheme,
+    could_not_start_service,
 )
 
 
@@ -73,6 +74,8 @@ def set_power(data: dict, user: str) -> dict:
     update_miner(miner)
 
     speed: float = change_miner_power(power, service_uuid, service.device, service.owner)
+    if speed == -1:
+        return could_not_start_service
 
     miner: Miner = wrapper.session.query(Miner).filter_by(uuid=service_uuid).first()
     service: Service = wrapper.session.query(Service).filter_by(uuid=service_uuid).first()

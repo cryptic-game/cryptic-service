@@ -29,6 +29,7 @@ from schemes import (
     standard_scheme,
     cannot_toggle_directly,
     device_scheme,
+    could_not_start_service,
 )
 from vars import config
 
@@ -98,13 +99,14 @@ def toggle(data: dict, user: str) -> dict:
     if not config["services"][service.name]["toggleable"]:
         return cannot_toggle_directly
 
+    if service.running:
+        stop_service(service.device, service.uuid, service.owner)
+    else:
+        if register_service(service.device, service.uuid, service.name, service.owner) == -1:
+            return could_not_start_service
+
     service.running = not service.running
     wrapper.session.commit()
-
-    if service.running:
-        register_service(service.device, service.uuid, service.name, service.owner)
-    else:
-        stop_service(service.device, service.uuid, service.owner)
 
     return service.serialize
 

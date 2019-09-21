@@ -44,7 +44,7 @@ class TestServiceModel(TestCase):
         self.assertEqual(expected_result, service.serialize)
 
     def test__model__service__create(self):
-        actual_result = Service.create("service-uuid", "my-device", "its-me", "ssh", 0.7)
+        actual_result = Service.create("service-uuid", "my-device", "its-me", "ssh", 0.7, True)
 
         self.assertIsInstance(actual_result, Service)
         self.assertEqual("service-uuid", actual_result.uuid)

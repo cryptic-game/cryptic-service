@@ -30,6 +30,8 @@ attack_not_running: dict = {"error": "attack_not_running"}
 
 attack_already_running: dict = {"error": "attack_already_running"}
 
+could_not_start_service: dict = {"error": "could_not_start_service"}
+
 attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
 
 standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}
