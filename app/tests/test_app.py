@@ -49,6 +49,9 @@ class TestApp(TestCase):
         app = import_app("__main__")
         elements = [getattr(app, element_name) for element_name in dir(app)]
 
+        registered_user_endpoints = mock.user_endpoints.copy()
+        registered_ms_endpoints = mock.ms_endpoints.copy()
+
         expected_user_endpoints = [
             (["public_info"], standard_scheme),
             (["use"], None),
@@ -76,9 +79,14 @@ class TestApp(TestCase):
         ]
 
         for path, requires in expected_user_endpoints:
-            self.assertIn((path, requires), mock.user_endpoints)
+            self.assertIn((path, requires), registered_user_endpoints)
+            registered_user_endpoints.remove((path, requires))
             self.assertIn(mock.user_endpoint_handlers[tuple(path)], elements)
 
         for path in expected_ms_endpoints:
-            self.assertIn(path, mock.ms_endpoints)
+            self.assertIn(path, registered_ms_endpoints)
+            registered_ms_endpoints.remove(path)
             self.assertIn(mock.ms_endpoint_handlers[tuple(path)], elements)
+
+        self.assertFalse(registered_user_endpoints)
+        self.assertFalse(registered_ms_endpoints)
