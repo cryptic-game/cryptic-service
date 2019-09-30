@@ -49,6 +49,10 @@ def controls_device(device: str, user: str) -> bool:
     ) == user or game_content.part_owner(device, user)
 
 
+def get_device_owner(device: str) -> str:
+    return m.contact_microservice("device", ["owner"], {"device_uuid": device}).get("owner")
+
+
 def exists_wallet(wallet: str) -> bool:
     return m.contact_microservice("currency", ["exists"], {"source_uuid": wallet})["exists"]
 

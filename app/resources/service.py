@@ -15,6 +15,7 @@ from resources.essentials import (
     delete_one_service,
     stop_service,
     register_service,
+    get_device_owner,
 )
 from schemes import (
     service_not_found,
@@ -168,7 +169,8 @@ def create(data: dict, user: str) -> dict:
     if service_count != 0:
         return already_own_this_service
 
-    return create_service(name, data, user)
+    device_owner: str = get_device_owner(device_uuid)
+    return create_service(name, data, device_owner)
 
 
 @m.user_endpoint(path=["part_owner"], requires=device_scheme)
