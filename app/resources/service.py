@@ -5,6 +5,7 @@ from sqlalchemy import func
 import resources.game_content as game_content
 from app import m, wrapper
 from models.bruteforce import Bruteforce
+from models.miner import Miner
 from models.service import Service
 from resources.essentials import (
     exists_device,
@@ -211,4 +212,34 @@ def hardware_stop(data: dict, microservice: str) -> dict:
 @m.microservice_endpoint(path=["hardware", "delete"])
 def hardware_delete(data: dict, microservice: str) -> dict:
     delete_services(data["device_uuid"])
+    return success_scheme
+
+
+@m.microservice_endpoint(path=["delete_user"])
+def delete_user(data: dict) -> dict:
+    """
+    Delete all devices of a user.
+
+    :param data: The given data.
+    :return: Success or not
+    """
+    user_uuid: str = data["user_uuid"]
+
+    for service in wrapper.session.query(Service).filter_by(owner=user_uuid):
+
+        # delete bruteforce if service is bruteforce
+        bruteforce = wrapper.session.query(Bruteforce).filter_by(uuid=service.uuid).first()
+        if bruteforce is not None:
+            wrapper.session.delete(bruteforce)
+
+        # delete miner if service is miner
+        miner = wrapper.session.query(Miner).filter_by(uuid=service.uuid).first()
+        if miner is not None:
+            wrapper.session.delete(miner)
+
+        # delete the service itself
+        wrapper.session.delete(service)
+
+    wrapper.session.commit()
+
     return success_scheme
