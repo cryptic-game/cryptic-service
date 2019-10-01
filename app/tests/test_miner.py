@@ -5,7 +5,14 @@ from mock.mock_loader import mock
 from models.miner import Miner
 from models.service import Service
 from resources import miner
-from schemes import miner_not_found, device_not_found, permission_denied, wallet_not_found, could_not_start_service
+from schemes import (
+    miner_not_found,
+    device_not_found,
+    permission_denied,
+    wallet_not_found,
+    could_not_start_service,
+    success_scheme,
+)
 
 
 class TestMiner(TestCase):
@@ -211,6 +218,46 @@ class TestMiner(TestCase):
         self.assertEqual(True, mock_service.running)
         self.assertEqual(42, mock_miner.power)
         self.assertEqual(1337, mock_miner.started)
+        mock.wrapper.session.commit.assert_called_with()
+
+    @patch("resources.miner.stop_service")
+    def test__ms_endpoint__miner_stop(self, stop_service_patch):
+        miners = []
+        services = []
+        service_map = {}
+        for i in range(5):
+            miners.append(mock.MagicMock())
+            service = mock.MagicMock()
+            service.running = not i % 2
+            service.stop_called = bool(i % 2)
+            service.uuid = miners[-1].uuid
+            services.append(service)
+            service_map[service.uuid] = service
+
+        self.query_miner.filter_by.return_value = miners
+
+        def service_query_handler(uuid):
+            m = mock.MagicMock()
+            m.first.return_value = service_map[uuid]
+            return m
+
+        def stop_service_handler(dev, uuid, user):
+            service = service_map[uuid]
+            self.assertEqual(service.device, dev)
+            self.assertEqual(service.uuid, uuid)
+            self.assertEqual(service.owner, user)
+            service.stop_called = not service.stop_called
+
+        self.query_service.filter_by.side_effect = service_query_handler
+        stop_service_patch.side_effect = stop_service_handler
+
+        self.assertEqual(success_scheme, miner.miner_stop({"wallet_uuid": "my-wallet"}, ""))
+        self.query_miner.filter_by.assert_called_with(wallet="my-wallet")
+
+        for service in services:
+            self.assertEqual(False, service.running)
+            self.assertEqual(True, service.stop_called)
+
         mock.wrapper.session.commit.assert_called_with()
 
     def test__ms_endpoint__miner_collect(self):

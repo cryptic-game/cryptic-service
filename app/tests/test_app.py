@@ -75,6 +75,7 @@ class TestApp(TestCase):
             ["hardware", "scale"],
             ["hardware", "stop"],
             ["hardware", "delete"],
+            ["miner", "stop"],
             ["miner", "collect"],
         ]
 
