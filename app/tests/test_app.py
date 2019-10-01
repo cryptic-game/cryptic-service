@@ -77,6 +77,7 @@ class TestApp(TestCase):
             ["hardware", "delete"],
             ["miner", "stop"],
             ["miner", "collect"],
+            ["delete_user"],
         ]
 
         for path, requires in expected_user_endpoints:
