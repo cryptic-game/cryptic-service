@@ -3,7 +3,14 @@ import time
 from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
-from resources.essentials import exists_device, controls_device, exists_wallet, update_miner, change_miner_power, stop_service
+from resources.essentials import (
+    exists_device,
+    controls_device,
+    exists_wallet,
+    update_miner,
+    change_miner_power,
+    stop_service,
+)
 from schemes import (
     miner_not_found,
     device_not_found,
@@ -14,6 +21,7 @@ from schemes import (
     miner_set_wallet_scheme,
     miner_set_power_scheme,
     could_not_start_service,
+    success_scheme,
 )
 
 
@@ -56,23 +64,6 @@ def set_wallet(data: dict, user: str) -> dict:
     return miner.serialize
 
 
-@m.microservice_endpoint(path=["miner", "stop"])
-def toggle(data: dict) -> dict:
-    miner_list: list = wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])
-    if not miner_list:
-        return miner_not_found
-    for miner in miner_list:
-        service: Service = wrapper.session.query(Service).filter_by(uuid=miner.uuid).first()
-
-        if service.running:
-            stop_service(service.device, service.uuid, service.owner)
-
-        service.running = False
-        wrapper.session.commit()
-
-        return service.serialize
-
-
 @m.user_endpoint(path=["miner", "power"], requires=miner_set_power_scheme)
 def set_power(data: dict, user: str) -> dict:
     service_uuid: str = data["service_uuid"]
@@ -108,6 +99,21 @@ def set_power(data: dict, user: str) -> dict:
     wrapper.session.commit()
 
     return miner.serialize
+
+
+@m.microservice_endpoint(path=["miner", "stop"])
+def miner_stop(data: dict, microservice: str) -> dict:
+    for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"]):
+        service: Service = wrapper.session.query(Service).filter_by(uuid=miner.uuid).first()
+
+        if service.running:
+            stop_service(service.device, service.uuid, service.owner)
+
+        service.running = False
+
+    wrapper.session.commit()
+
+    return success_scheme
 
 
 @m.microservice_endpoint(path=["miner", "collect"])
