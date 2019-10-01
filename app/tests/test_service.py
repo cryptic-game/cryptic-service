@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from mock.mock_loader import mock
 from models.bruteforce import Bruteforce
+from models.miner import Miner
 from models.service import Service
 from resources import service, game_content
 from schemes import (
@@ -28,9 +29,11 @@ class TestService(TestCase):
         service.func = self.sqlalchemy_func = mock.MagicMock()
         self.query_func_count = mock.MagicMock()
         self.query_bruteforce = mock.MagicMock()
+        self.query_miner = mock.MagicMock()
         mock.wrapper.session.query.side_effect = {
             Service: self.query_service,
             Bruteforce: self.query_bruteforce,
+            Miner: self.query_miner,
             self.sqlalchemy_func.count(): self.query_func_count,
         }.__getitem__
 
@@ -405,3 +408,33 @@ class TestService(TestCase):
     def test__ms_endpoint__hardware_delete(self, delete_patch):
         self.assertEqual(success_scheme, service.hardware_delete({"device_uuid": "the-device"}, ""))
         delete_patch.assert_called_with("the-device")
+
+    def test__ms_endpoint__delete_user(self):
+        normal_service = mock.MagicMock()
+        bruteforce_service = mock.MagicMock()
+        bruteforce_info = mock.MagicMock()
+        miner_service = mock.MagicMock()
+        miner_info = mock.MagicMock()
+        self.query_service.filter_by.return_value = [normal_service, bruteforce_service, miner_service]
+        to_delete = [normal_service, bruteforce_service, bruteforce_info, miner_service, miner_info]
+
+        def handle_query_bruteforce(uuid):
+            out = mock.MagicMock()
+            out.first.return_value = bruteforce_info if uuid == bruteforce_service.uuid else None
+            return out
+
+        self.query_bruteforce.filter_by.side_effect = handle_query_bruteforce
+
+        def handle_query_miner(uuid):
+            out = mock.MagicMock()
+            out.first.return_value = miner_info if uuid == miner_service.uuid else None
+            return out
+
+        self.query_miner.filter_by.side_effect = handle_query_miner
+
+        mock.wrapper.session.delete.side_effect = to_delete.remove
+
+        self.assertEqual(success_scheme, service.delete_user({"user_uuid": "user"}, "server"))
+        self.query_service.filter_by.assert_called_with(owner="user")
+        mock.wrapper.session.commit.assert_called_with()
+        self.assertFalse(to_delete)

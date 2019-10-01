@@ -218,11 +218,12 @@ def hardware_delete(data: dict, microservice: str) -> dict:
 
 
 @m.microservice_endpoint(path=["delete_user"])
-def delete_user(data: dict) -> dict:
+def delete_user(data: dict, microservice: str) -> dict:
     """
     Delete all devices of a user.
 
     :param data: The given data.
+    :param microservice: The name of the requesting microservice
     :return: Success or not
     """
     user_uuid: str = data["user_uuid"]
