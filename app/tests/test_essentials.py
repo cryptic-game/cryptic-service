@@ -110,29 +110,40 @@ class TestEssentials(TestCase):
             },
         )
 
-    def test__controls_device__is_owner(self):
-        mock.m.contact_microservice.return_value = {"owner": "user"}
+    @patch("resources.essentials.get_device_owner")
+    def test__controls_device__is_owner(self, get_device_owner_patch):
+        get_device_owner_patch.return_value = "user"
 
         self.assertTrue(essentials.controls_device("the-device", "user"))
-        mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "the-device"})
+        get_device_owner_patch.assert_called_with("the-device")
 
     @patch("resources.essentials.game_content.part_owner")
-    def test__controls_device__is_part_owner(self, part_owner_patch):
-        mock.m.contact_microservice.return_value = {"owner": "someone-else"}
+    @patch("resources.essentials.get_device_owner")
+    def test__controls_device__is_part_owner(self, get_device_owner_patch, part_owner_patch):
+        get_device_owner_patch.return_value = "someone-else"
         part_owner_patch.return_value = True
 
         self.assertTrue(essentials.controls_device("the-device", "user"))
-        mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "the-device"})
+        get_device_owner_patch.assert_called_with("the-device")
         part_owner_patch.assert_called_with("the-device", "user")
 
     @patch("resources.essentials.game_content.part_owner")
-    def test__controls_device__access_denied(self, part_owner_patch):
-        mock.m.contact_microservice.return_value = {"owner": "someone-else"}
+    @patch("resources.essentials.get_device_owner")
+    def test__controls_device__access_denied(self, get_device_owner_patch, part_owner_patch):
+        get_device_owner_patch.return_value = "someone-else"
         part_owner_patch.return_value = False
 
         self.assertFalse(essentials.controls_device("the-device", "user"))
-        mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "the-device"})
+        get_device_owner_patch.assert_called_with("the-device")
         part_owner_patch.assert_called_with("the-device", "user")
+
+    def test__get_device_owner(self):
+        mock.m.contact_microservice.return_value = {"owner": "some-user"}
+        expected_result = "some-user"
+        actual_result = essentials.get_device_owner("some-device")
+
+        self.assertEqual(expected_result, actual_result)
+        mock.m.contact_microservice.assert_called_with("device", ["owner"], {"device_uuid": "some-device"})
 
     def test__exists_wallet(self):
         response = mock.MagicMock()
