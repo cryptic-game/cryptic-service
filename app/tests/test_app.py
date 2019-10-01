@@ -2,6 +2,7 @@ from importlib import machinery, util
 from unittest import TestCase
 
 from mock.mock_loader import mock
+from resources import service, bruteforce, miner
 from schemes import (
     standard_scheme,
     device_scheme,
@@ -53,42 +54,44 @@ class TestApp(TestCase):
         registered_ms_endpoints = mock.ms_endpoints.copy()
 
         expected_user_endpoints = [
-            (["public_info"], standard_scheme),
-            (["use"], None),
-            (["private_info"], standard_scheme),
-            (["toggle"], standard_scheme),
-            (["delete"], standard_scheme),
-            (["list"], device_scheme),
-            (["create"], None),
-            (["part_owner"], device_scheme),
-            (["bruteforce", "attack"], attack_scheme),
-            (["bruteforce", "status"], standard_scheme),
-            (["bruteforce", "stop"], standard_scheme),
-            (["miner", "get"], service_scheme),
-            (["miner", "list"], wallet_scheme),
-            (["miner", "wallet"], miner_set_wallet_scheme),
-            (["miner", "power"], miner_set_power_scheme),
+            (["public_info"], standard_scheme, service.public_info),
+            (["use"], None, service.use),
+            (["private_info"], standard_scheme, service.private_info),
+            (["toggle"], standard_scheme, service.toggle),
+            (["delete"], standard_scheme, service.delete_service),
+            (["list"], device_scheme, service.list_services),
+            (["create"], None, service.create),
+            (["part_owner"], device_scheme, service.part_owner),
+            (["bruteforce", "attack"], attack_scheme, bruteforce.attack),
+            (["bruteforce", "status"], standard_scheme, bruteforce.status),
+            (["bruteforce", "stop"], standard_scheme, bruteforce.stop),
+            (["miner", "get"], service_scheme, miner.get),
+            (["miner", "list"], wallet_scheme, miner.list_miners),
+            (["miner", "wallet"], miner_set_wallet_scheme, miner.set_wallet),
+            (["miner", "power"], miner_set_power_scheme, miner.set_power),
         ]
 
         expected_ms_endpoints = [
-            ["check_part_owner"],
-            ["hardware", "scale"],
-            ["hardware", "stop"],
-            ["hardware", "delete"],
-            ["miner", "stop"],
-            ["miner", "collect"],
-            ["delete_user"],
+            (["check_part_owner"], service.check_part_owner),
+            (["hardware", "scale"], service.hardware_scale),
+            (["hardware", "stop"], service.hardware_stop),
+            (["hardware", "delete"], service.hardware_delete),
+            (["miner", "stop"], miner.miner_stop),
+            (["miner", "collect"], miner.collect),
+            (["delete_user"], service.delete_user),
         ]
 
-        for path, requires in expected_user_endpoints:
+        for path, requires, func in expected_user_endpoints:
             self.assertIn((path, requires), registered_user_endpoints)
             registered_user_endpoints.remove((path, requires))
             self.assertIn(mock.user_endpoint_handlers[tuple(path)], elements)
+            self.assertEqual(func, mock.user_endpoint_handlers[tuple(path)])
 
-        for path in expected_ms_endpoints:
+        for path, func in expected_ms_endpoints:
             self.assertIn(path, registered_ms_endpoints)
             registered_ms_endpoints.remove(path)
             self.assertIn(mock.ms_endpoint_handlers[tuple(path)], elements)
+            self.assertEqual(func, mock.ms_endpoint_handlers[tuple(path)])
 
         self.assertFalse(registered_user_endpoints)
         self.assertFalse(registered_ms_endpoints)
