@@ -44,9 +44,11 @@ def change_miner_power(power: float, service_uuid: str, device_uuid: str, user: 
 
 
 def controls_device(device: str, user: str) -> bool:
-    return m.contact_microservice("device", ["owner"], {"device_uuid": device}).get(
-        "owner"
-    ) == user or game_content.part_owner(device, user)
+    return get_device_owner(device) == user or game_content.part_owner(device, user)
+
+
+def get_device_owner(device: str) -> str:
+    return m.contact_microservice("device", ["owner"], {"device_uuid": device}).get("owner")
 
 
 def exists_wallet(wallet: str) -> bool:

@@ -299,12 +299,16 @@ class TestService(TestCase):
         controls_device_patch.assert_called_with("my-device", "user")
 
     @patch("resources.service.config", {"services": {"the-service": {}}})
+    @patch("resources.service.get_device_owner")
     @patch("resources.service.controls_device")
     @patch("resources.service.exists_device")
-    def test__user_endpoint__create__already_own_this_service(self, exists_device_patch, controls_device_patch):
+    def test__user_endpoint__create__already_own_this_service(
+        self, exists_device_patch, controls_device_patch, get_device_owner_patch
+    ):
         exists_device_patch.return_value = True
         controls_device_patch.return_value = True
         self.query_func_count.filter_by().scalar.return_value = 1
+        get_device_owner_patch.return_value = "dev-owner"
 
         expected_result = already_own_this_service
         actual_result = service.create({"device_uuid": "my-device", "name": "the-service"}, "user")
@@ -313,16 +317,21 @@ class TestService(TestCase):
         exists_device_patch.assert_called_with("my-device")
         controls_device_patch.assert_called_with("my-device", "user")
         self.sqlalchemy_func.count.assert_called_with(Service.name)
-        self.query_func_count.filter_by.assert_called_with(owner="user", device="my-device", name="the-service")
+        get_device_owner_patch.assert_called_with("my-device")
+        self.query_func_count.filter_by.assert_called_with(owner="dev-owner", device="my-device", name="the-service")
 
     @patch("resources.service.config", {"services": {"the-service": {}}})
     @patch("resources.service.create_service")
+    @patch("resources.service.get_device_owner")
     @patch("resources.service.controls_device")
     @patch("resources.service.exists_device")
-    def test__user_endpoint__create__successful(self, exists_device_patch, controls_device_patch, create_patch):
+    def test__user_endpoint__create__successful(
+        self, exists_device_patch, controls_device_patch, get_device_owner_patch, create_patch
+    ):
         exists_device_patch.return_value = True
         controls_device_patch.return_value = True
         self.query_func_count.filter_by().scalar.return_value = 0
+        get_device_owner_patch.return_value = "dev-owner"
 
         data = {"device_uuid": "my-device", "name": "the-service"}
         expected_result = create_patch()
@@ -332,8 +341,9 @@ class TestService(TestCase):
         exists_device_patch.assert_called_with("my-device")
         controls_device_patch.assert_called_with("my-device", "user")
         self.sqlalchemy_func.count.assert_called_with(Service.name)
-        self.query_func_count.filter_by.assert_called_with(owner="user", device="my-device", name="the-service")
-        create_patch.assert_called_with("the-service", data, "user")
+        get_device_owner_patch.assert_called_with("my-device")
+        self.query_func_count.filter_by.assert_called_with(owner="dev-owner", device="my-device", name="the-service")
+        create_patch.assert_called_with("the-service", data, "dev-owner")
 
     @patch("resources.service.game_content.part_owner")
     def test__user_endpoint__part_owner(self, part_owner_patch):
