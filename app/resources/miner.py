@@ -78,6 +78,8 @@ def set_power(data: dict, user: str) -> dict:
         return device_not_found
     if not controls_device(service.device, user):
         return permission_denied
+    if not exists_wallet(miner.wallet):
+        return wallet_not_found
 
     update_miner(miner)
 
