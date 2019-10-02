@@ -142,37 +142,70 @@ class TestMiner(TestCase):
         exists_device_patch.assert_called_with(mock_service.device)
         controls_device_patch.assert_called_with(mock_service.device, "u")
 
-    @patch("resources.miner.change_miner_power")
-    @patch("resources.miner.update_miner")
+    @patch("resources.miner.exists_wallet")
     @patch("resources.miner.controls_device")
     @patch("resources.miner.exists_device")
-    def test__user_endpoint__miner_power__could_not_start_service(
-        self, exists_device_patch, controls_device_patch, update_miner_patch, change_miner_power_patch
+    def test__user_endpoint__miner_power__wallet_not_found(
+        self, exists_device_patch, controls_device_patch, exists_wallet_patch
     ):
         mock_miner = self.query_miner.filter_by().first.return_value = mock.MagicMock()
         mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
         exists_device_patch.return_value = True
         controls_device_patch.return_value = True
+        exists_wallet_patch.return_value = False
+        self.assertEqual(wallet_not_found, miner.set_power({"service_uuid": "miner", "power": 42}, "u"))
+        self.query_miner.filter_by.assert_called_with(uuid="miner")
+        self.query_service.filter_by.assert_called_with(uuid="miner")
+        exists_device_patch.assert_called_with(mock_service.device)
+        controls_device_patch.assert_called_with(mock_service.device, "u")
+        exists_wallet_patch.assert_called_with(mock_miner.wallet)
+
+    @patch("resources.miner.change_miner_power")
+    @patch("resources.miner.update_miner")
+    @patch("resources.miner.exists_wallet")
+    @patch("resources.miner.controls_device")
+    @patch("resources.miner.exists_device")
+    def test__user_endpoint__miner_power__could_not_start_service(
+        self,
+        exists_device_patch,
+        controls_device_patch,
+        exists_wallet_patch,
+        update_miner_patch,
+        change_miner_power_patch,
+    ):
+        mock_miner = self.query_miner.filter_by().first.return_value = mock.MagicMock()
+        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        exists_device_patch.return_value = True
+        controls_device_patch.return_value = True
+        exists_wallet_patch.return_value = True
         change_miner_power_patch.return_value = -1
         self.assertEqual(could_not_start_service, miner.set_power({"service_uuid": "miner", "power": 42}, "u"))
         self.query_miner.filter_by.assert_called_with(uuid="miner")
         self.query_service.filter_by.assert_called_with(uuid="miner")
         exists_device_patch.assert_called_with(mock_service.device)
         controls_device_patch.assert_called_with(mock_service.device, "u")
+        exists_wallet_patch.assert_called_with(mock_miner.wallet)
         update_miner_patch.assert_called_with(mock_miner)
         change_miner_power_patch.assert_called_with(42, "miner", mock_service.device, mock_service.owner)
 
     @patch("resources.miner.change_miner_power")
     @patch("resources.miner.update_miner")
+    @patch("resources.miner.exists_wallet")
     @patch("resources.miner.controls_device")
     @patch("resources.miner.exists_device")
     def test__user_endpoint__miner_power__successful_stopped(
-        self, exists_device_patch, controls_device_patch, update_miner_patch, change_miner_power_patch
+        self,
+        exists_device_patch,
+        controls_device_patch,
+        exists_wallet_patch,
+        update_miner_patch,
+        change_miner_power_patch,
     ):
         mock_miner = self.query_miner.filter_by().first.return_value = mock.MagicMock()
         mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
         exists_device_patch.return_value = True
         controls_device_patch.return_value = True
+        exists_wallet_patch.return_value = True
 
         expected_result = mock_miner.serialize
         actual_result = miner.set_power({"service_uuid": "miner", "power": 0}, "u")
@@ -182,6 +215,7 @@ class TestMiner(TestCase):
         self.query_service.filter_by.assert_called_with(uuid="miner")
         exists_device_patch.assert_called_with(mock_service.device)
         controls_device_patch.assert_called_with(mock_service.device, "u")
+        exists_wallet_patch.assert_called_with(mock_miner.wallet)
         update_miner_patch.assert_called_with(mock_miner)
         change_miner_power_patch.assert_called_with(0, "miner", mock_service.device, mock_service.owner)
         self.assertEqual(change_miner_power_patch(), mock_service.speed)
@@ -193,15 +227,23 @@ class TestMiner(TestCase):
     @patch("resources.miner.time.time")
     @patch("resources.miner.change_miner_power")
     @patch("resources.miner.update_miner")
+    @patch("resources.miner.exists_wallet")
     @patch("resources.miner.controls_device")
     @patch("resources.miner.exists_device")
     def test__user_endpoint__miner_power__successful_started(
-        self, exists_device_patch, controls_device_patch, update_miner_patch, change_miner_power_patch, time_patch
+        self,
+        exists_device_patch,
+        controls_device_patch,
+        exists_wallet_patch,
+        update_miner_patch,
+        change_miner_power_patch,
+        time_patch,
     ):
         mock_miner = self.query_miner.filter_by().first.return_value = mock.MagicMock()
         mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
         exists_device_patch.return_value = True
         controls_device_patch.return_value = True
+        exists_wallet_patch.return_value = True
         time_patch.return_value = "1337"
 
         expected_result = mock_miner.serialize
@@ -212,6 +254,7 @@ class TestMiner(TestCase):
         self.query_service.filter_by.assert_called_with(uuid="miner")
         exists_device_patch.assert_called_with(mock_service.device)
         controls_device_patch.assert_called_with(mock_service.device, "u")
+        exists_wallet_patch.assert_called_with(mock_miner.wallet)
         update_miner_patch.assert_called_with(mock_miner)
         change_miner_power_patch.assert_called_with(42, "miner", mock_service.device, mock_service.owner)
         self.assertEqual(change_miner_power_patch(), mock_service.speed)
