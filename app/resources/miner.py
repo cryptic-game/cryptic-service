@@ -112,6 +112,7 @@ def miner_stop(data: dict, microservice: str) -> dict:
             stop_service(service.device, service.uuid, service.owner)
 
         service.running = False
+        miner.started = None
 
     wrapper.session.commit()
 

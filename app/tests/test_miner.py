@@ -301,6 +301,9 @@ class TestMiner(TestCase):
             self.assertEqual(False, service.running)
             self.assertEqual(True, service.stop_called)
 
+        for m in miners:
+            self.assertEqual(None, m.started)
+
         mock.wrapper.session.commit.assert_called_with()
 
     def test__ms_endpoint__miner_collect(self):
