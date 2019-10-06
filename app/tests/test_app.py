@@ -62,6 +62,7 @@ class TestApp(TestCase):
             (["list"], device_scheme, service.list_services),
             (["create"], None, service.create),
             (["part_owner"], device_scheme, service.part_owner),
+            (["list_part_owner"], {}, service.list_part_owner),
             (["bruteforce", "attack"], attack_scheme, bruteforce.attack),
             (["bruteforce", "status"], standard_scheme, bruteforce.status),
             (["bruteforce", "stop"], standard_scheme, bruteforce.stop),
