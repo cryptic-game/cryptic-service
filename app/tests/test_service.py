@@ -356,6 +356,15 @@ class TestService(TestCase):
         self.assertEqual(expected_result, actual_result)
         part_owner_patch.assert_called_with("some-device", "user")
 
+    def test__user_endpoint__list_part_owner(self):
+        services = self.query_service.filter_by.return_value = [mock.MagicMock() for _ in range(5)]
+
+        expected_result = {"services": [e.serialize for e in services]}
+        actual_result = service.list_part_owner({}, "user")
+
+        self.assertEqual(expected_result, actual_result)
+        self.query_service.filter_by.assert_called_with(part_owner="user")
+
     @patch("resources.service.game_content.part_owner")
     def test__ms_endpoint__check_part_owner(self, part_owner_patch):
         expected_result = {"ok": part_owner_patch()}

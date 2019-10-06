@@ -179,6 +179,11 @@ def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
 
+@m.user_endpoint(path=["list_part_owner"], requires={})
+def list_part_owner(data: dict, user: str) -> dict:
+    return {"services": [service.serialize for service in wrapper.session.query(Service).filter_by(part_owner=user)]}
+
+
 @m.microservice_endpoint(path=["check_part_owner"])
 def check_part_owner(data: dict, microservice: str) -> dict:
     # all these requests are trusted
