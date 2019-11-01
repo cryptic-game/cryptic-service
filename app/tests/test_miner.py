@@ -35,12 +35,17 @@ class TestMiner(TestCase):
 
     def test__user_endpoint__miner_list(self):
         miners = self.query_miner.filter_by.return_value = [mock.MagicMock() for _ in range(5)]
+        services = [mock.MagicMock() for _ in range(5)]
+        results = services.copy()
+        expected_arguments = [m.uuid for m in miners]
+        self.query_service.get.side_effect = lambda a: self.assertEqual(expected_arguments.pop(0), a) or results.pop(0)
 
-        expected_result = {"miners": [m.serialize for m in miners]}
+        expected_result = {"miners": [{"miner": m.serialize, "service": s.serialize} for m, s in zip(miners, services)]}
         actual_result = miner.list_miners({"wallet_uuid": "some-wallet"}, "")
 
         self.assertEqual(expected_result, actual_result)
         self.query_miner.filter_by.assert_called_with(wallet="some-wallet")
+        self.assertFalse(results)
 
     def test__user_endpoint__miner_wallet__miner_not_found(self):
         self.query_miner.filter_by().first.return_value = None

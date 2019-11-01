@@ -35,7 +35,12 @@ def get(data: dict, user: str) -> dict:
 
 @m.user_endpoint(path=["miner", "list"], requires=wallet_scheme)
 def list_miners(data: dict, user: str) -> dict:
-    return {"miners": [miner.serialize for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])]}
+    return {
+        "miners": [
+            {"miner": miner.serialize, "service": wrapper.session.query(Service).get(miner.uuid).serialize}
+            for miner in wrapper.session.query(Miner).filter_by(wallet=data["wallet_uuid"])
+        ]
+    }
 
 
 @m.user_endpoint(path=["miner", "wallet"], requires=miner_set_wallet_scheme)
