@@ -1,12 +1,13 @@
 import app
 
 
+# noinspection PyUnresolvedReferences
+def load_endpoints():
+    import resources.service
+    import resources.miner
+    import resources.bruteforce
+
+
 if __name__ == "__main__":
-
-    # noinspection PyUnresolvedReferences
-    from resources.service import *
-    from resources.miner import *
-    from resources.bruteforce import *
-
-    app.wrapper.Base.metadata.create_all(bind=wrapper.engine)
+    load_endpoints()
     app.m.run()
