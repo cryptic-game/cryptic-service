@@ -29,9 +29,6 @@ class TestApp(TestCase):
     def test__microservice_setup(self):
         app = import_app()
 
-        mock.get_config.assert_called_with()
-        self.assertEqual(mock.get_config(), app.config)
-
         mock.MicroService.assert_called_with("service")
         self.assertEqual(mock.MicroService(), app.m)
 
