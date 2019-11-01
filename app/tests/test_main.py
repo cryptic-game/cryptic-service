@@ -41,6 +41,7 @@ class TestApp(TestCase):
 
     def test__run_as_main(self):
         import_main("__main__")
+        import_app()
 
         mock.wrapper.Base.metadata.create_all.assert_called_with(bind=mock.wrapper.engine)
         mock.m.run.assert_called_with()
@@ -52,8 +53,7 @@ class TestApp(TestCase):
         mock.m.run.assert_not_called()
 
     def test__endpoints_available(self):
-        main = import_main("__main__")
-        elements = [getattr(main, element_name) for element_name in dir(main)]
+        import_main("__main__")
 
         registered_user_endpoints = mock.user_endpoints.copy()
         registered_ms_endpoints = mock.ms_endpoints.copy()
@@ -90,13 +90,11 @@ class TestApp(TestCase):
         for path, requires, func in expected_user_endpoints:
             self.assertIn((path, requires), registered_user_endpoints)
             registered_user_endpoints.remove((path, requires))
-            self.assertIn(mock.user_endpoint_handlers[tuple(path)], elements)
             self.assertEqual(func, mock.user_endpoint_handlers[tuple(path)])
 
         for path, func in expected_ms_endpoints:
             self.assertIn(path, registered_ms_endpoints)
             registered_ms_endpoints.remove(path)
-            self.assertIn(mock.ms_endpoint_handlers[tuple(path)], elements)
             self.assertEqual(func, mock.ms_endpoint_handlers[tuple(path)])
 
         self.assertFalse(registered_user_endpoints)
