@@ -32,6 +32,8 @@ attack_already_running: dict = {"error": "attack_already_running"}
 
 could_not_start_service: dict = {"error": "could_not_start_service"}
 
+cannot_delete_enforced_service: dict = {"error": "cannot_delete_enforced_service"}
+
 attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
 
 standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}

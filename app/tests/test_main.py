@@ -78,6 +78,7 @@ class TestApp(TestCase):
         ]
 
         expected_ms_endpoints = [
+            (["device_init"], service.device_init),
             (["check_part_owner"], service.check_part_owner),
             (["hardware", "scale"], service.hardware_scale),
             (["hardware", "stop"], service.hardware_stop),

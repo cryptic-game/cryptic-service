@@ -18,6 +18,7 @@ from schemes import (
     service_not_supported,
     already_own_this_service,
     could_not_start_service,
+    cannot_delete_enforced_service,
 )
 
 
@@ -208,6 +209,14 @@ class TestService(TestCase):
         self.assertEqual(service_not_found, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u"))
         self.query_service.filter_by.assert_called_with(uuid="s", device="d")
 
+    def test__user_endpoint__delete__cannot_delete_ssh(self):
+        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service.name = "ssh"
+        self.assertEqual(
+            cannot_delete_enforced_service, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u")
+        )
+        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+
     @patch("resources.service.controls_device")
     def test__user_endpoint__delete__permission_denied(self, controls_device_patch):
         self.query_service.filter_by().first.return_value = mock.MagicMock()
@@ -364,6 +373,12 @@ class TestService(TestCase):
 
         self.assertEqual(expected_result, actual_result)
         self.query_service.filter_by.assert_called_with(part_owner="user")
+
+    @patch("resources.service.create_service")
+    def test__ms_endpoint__device_init(self, create_service_patch):
+        data = {"device_uuid": "some-device", "user": "foobar"}
+        self.assertEqual(success_scheme, service.device_init(data, ""))
+        create_service_patch.assert_called_with("ssh", data, "foobar")
 
     @patch("resources.service.game_content.part_owner")
     def test__ms_endpoint__check_part_owner(self, part_owner_patch):
