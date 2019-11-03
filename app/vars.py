@@ -49,7 +49,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "toggleable": False,
-            "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "needs": {"cpu": 30, "ram": 20, "gpu": 0, "disk": 0, "network": 228},
             "speedm": standard_speed,
         },
         "bruteforce": {
@@ -58,7 +58,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "toggleable": False,
-            "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "needs": {"cpu": 50, "ram": 630, "gpu": 100, "disk": 10, "network": 243},
             "speedm": calculate_speed_bruteforce,
         },
         "miner": {
@@ -67,7 +67,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "toggleable": False,
-            "needs": {"cpu": 1200, "ram": 650, "gpu": 50, "disk": 50, "network": 50},
+            "needs": {"cpu": 1200, "ram": 112, "gpu": 24, "disk": 10, "network": 375},
             "speedm": calculate_speed_miner,
         },
     },
