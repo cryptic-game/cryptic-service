@@ -1,11 +1,13 @@
 # In game specific stuff
+import math
 from typing import Tuple
 
 
 def calculate_speed_miner(
     edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
 ) -> float:
-    return min(sum(rdata) / sum(edata), 1)
+    cpu, ram, *_ = rdata
+    return 0.08 - 0.08 * math.exp(-(cpu * ram) / 300000)
 
 
 def calculate_speed_bruteforce(
@@ -65,7 +67,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "toggleable": False,
-            "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
+            "needs": {"cpu": 1200, "ram": 650, "gpu": 50, "disk": 50, "network": 50},
             "speedm": calculate_speed_miner,
         },
     },
