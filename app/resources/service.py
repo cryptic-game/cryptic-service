@@ -193,6 +193,22 @@ def device_init(data: dict, microservice: str) -> dict:
     return success_scheme
 
 
+@m.microservice_endpoint(path=["device_restart"])
+def device_restart(data: dict, microservice: str) -> dict:
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(
+        device=data["device_uuid"], name="ssh"
+    ).first()
+    if service is not None:
+        if register_service(service.device, service.uuid, service.name, service.owner) == -1:
+            return could_not_start_service
+        service.running = True
+        wrapper.session.commit()
+    else:
+        create_service("ssh", data, data["user"])
+
+    return success_scheme
+
+
 @m.microservice_endpoint(path=["check_part_owner"])
 def check_part_owner(data: dict, microservice: str) -> dict:
     # all these requests are trusted
