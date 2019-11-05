@@ -32,6 +32,7 @@ from schemes import (
     cannot_toggle_directly,
     device_scheme,
     could_not_start_service,
+    cannot_delete_enforced_service,
 )
 from vars import config
 
@@ -121,6 +122,8 @@ def delete_service(data: dict, user: str) -> dict:
 
     if service is None:
         return service_not_found
+    if service.name == "ssh":
+        return cannot_delete_enforced_service
 
     if not controls_device(device_uuid, user):
         return permission_denied
@@ -182,6 +185,28 @@ def part_owner(data: dict, user: str) -> dict:
 @m.user_endpoint(path=["list_part_owner"], requires={})
 def list_part_owner(data: dict, user: str) -> dict:
     return {"services": [service.serialize for service in wrapper.session.query(Service).filter_by(part_owner=user)]}
+
+
+@m.microservice_endpoint(path=["device_init"])
+def device_init(data: dict, microservice: str) -> dict:
+    create_service("ssh", data, data["user"])
+    return success_scheme
+
+
+@m.microservice_endpoint(path=["device_restart"])
+def device_restart(data: dict, microservice: str) -> dict:
+    service: Optional[Service] = wrapper.session.query(Service).filter_by(
+        device=data["device_uuid"], name="ssh"
+    ).first()
+    if service is not None:
+        if register_service(service.device, service.uuid, service.name, service.owner) == -1:
+            return could_not_start_service
+        service.running = True
+        wrapper.session.commit()
+    else:
+        create_service("ssh", data, data["user"])
+
+    return success_scheme
 
 
 @m.microservice_endpoint(path=["check_part_owner"])

@@ -30,7 +30,7 @@ config: dict = {
             "exploit_able": True,
             "allow_remote_access": True,
             "auto_start": True,
-            "toggleable": True,
+            "toggleable": False,
             "needs": {"cpu": 100, "ram": 100, "gpu": 100, "disk": 100, "network": 100},
             "speedm": standard_speed,
         },
