@@ -16,6 +16,8 @@ cannot_toggle_directly: dict = {"error": "cannot_toggle_directly"}
 
 device_not_found: dict = {"error": "device_not_found"}
 
+device_not_online: dict = {"error": "device_not_online"}
+
 wallet_not_found: dict = {"error": "wallet_not_found"}
 
 miner_not_found: dict = {"error": "miner_not_found"}

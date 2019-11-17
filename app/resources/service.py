@@ -1,5 +1,6 @@
 from typing import Optional, Tuple
 
+from cryptic import register_errors
 from sqlalchemy import func
 
 import resources.game_content as game_content
@@ -7,9 +8,8 @@ from app import m, wrapper
 from models.bruteforce import Bruteforce
 from models.miner import Miner
 from models.service import Service
+from resources.errors import service_exists, device_online, device_accessible, has_service_and_device
 from resources.essentials import (
-    exists_device,
-    controls_device,
     create_service,
     stop_services,
     delete_services,
@@ -20,10 +20,6 @@ from resources.essentials import (
 )
 from schemes import (
     service_not_found,
-    device_not_found,
-    permission_denied,
-    unknown_service,
-    invalid_request,
     service_cannot_be_used,
     service_not_supported,
     already_own_this_service,
@@ -42,30 +38,17 @@ switch: dict = {  # this is just for tools, its a more smooth way of a "switch" 
 
 
 @m.user_endpoint(path=["public_info"], requires=standard_scheme)
-def public_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(
-        uuid=data["service_uuid"], device=data["device_uuid"]
-    ).first()
-    if service is None or service.running_port is None or not service.running:
-        return unknown_service
+@register_errors(service_exists(), device_online)
+def public_info(data: dict, user: str, service: Service) -> dict:
+    if service.running_port is None or not service.running:
+        return service_not_found
+
     return service.public_data()
 
 
 @m.user_endpoint(path=["use"], requires=None)
-def use(data: dict, user: str) -> dict:
-    if "device_uuid" not in data or "service_uuid" not in data:
-        return invalid_request
-
-    device_uuid: str = data["device_uuid"]
-    service_uuid: str = data["service_uuid"]
-    if not isinstance(device_uuid, str) or not isinstance(service_uuid, str):
-        return invalid_request
-
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid, device=device_uuid).first()
-
-    if service is None or (service.owner != user and not game_content.part_owner(device_uuid, user)):
-        return unknown_service
-
+@register_errors(has_service_and_device, service_exists(), device_online, device_accessible)
+def use(data: dict, user: str, service: Service) -> dict:
     if service.name not in switch:
         return service_cannot_be_used
 
@@ -73,32 +56,14 @@ def use(data: dict, user: str) -> dict:
 
 
 @m.user_endpoint(path=["private_info"], requires=standard_scheme)
-def private_info(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(
-        uuid=data["service_uuid"], device=data["device_uuid"]
-    ).first()
-
-    if service is None:
-        return unknown_service
-
-    if not service.check_access(user):
-        return permission_denied
-
+@register_errors(service_exists(), device_online, device_accessible)
+def private_info(data: dict, user: str, service: Service) -> dict:
     return service.serialize
 
 
 @m.user_endpoint(path=["toggle"], requires=standard_scheme)
-def toggle(data: dict, user: str) -> dict:
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(
-        uuid=data["service_uuid"], device=data["device_uuid"]
-    ).first()
-
-    if service is None:
-        return service_not_found
-
-    if user != service.owner:
-        return permission_denied
-
+@register_errors(service_exists(), device_online, device_accessible)
+def toggle(data: dict, user: str, service: Service) -> dict:
     if not config["services"][service.name]["toggleable"]:
         return cannot_toggle_directly
 
@@ -115,18 +80,10 @@ def toggle(data: dict, user: str) -> dict:
 
 
 @m.user_endpoint(path=["delete"], requires=standard_scheme)
-def delete_service(data: dict, user: str) -> dict:
-    device_uuid: str = data["device_uuid"]
-    service_uuid: str = data["service_uuid"]
-    service: Optional[Service] = wrapper.session.query(Service).filter_by(uuid=service_uuid, device=device_uuid).first()
-
-    if service is None:
-        return service_not_found
+@register_errors(service_exists(), device_online, device_accessible)
+def delete_service(data: dict, user: str, service: Service) -> dict:
     if service.name == "ssh":
         return cannot_delete_enforced_service
-
-    if not controls_device(device_uuid, user):
-        return permission_denied
 
     delete_one_service(service)
 
@@ -134,12 +91,8 @@ def delete_service(data: dict, user: str) -> dict:
 
 
 @m.user_endpoint(path=["list"], requires=device_scheme)
+@register_errors(device_online, device_accessible)
 def list_services(data: dict, user: str) -> dict:
-    if not exists_device(data["device_uuid"]):
-        return device_not_found
-    if not controls_device(data["device_uuid"], user):
-        return permission_denied
-
     return {
         "services": [
             service.serialize for service in wrapper.session.query(Service).filter_by(device=data["device_uuid"]).all()
@@ -148,24 +101,13 @@ def list_services(data: dict, user: str) -> dict:
 
 
 @m.user_endpoint(path=["create"], requires=None)
+@register_errors(device_online, device_accessible)
 def create(data: dict, user: str) -> dict:
-    if "device_uuid" not in data or "name" not in data:
-        return invalid_request
-
     device_uuid: str = data["device_uuid"]
     name: str = data["name"]
 
-    if not isinstance(device_uuid, str) or not isinstance(name, str):
-        return invalid_request
-
     if name not in config["services"]:
         return service_not_supported
-
-    if not exists_device(device_uuid):
-        return device_not_found
-
-    if not controls_device(device_uuid, user):
-        return permission_denied
 
     device_owner: str = get_device_owner(device_uuid)
     service_count: int = wrapper.session.query(func.count(Service.name)).filter_by(
@@ -178,6 +120,7 @@ def create(data: dict, user: str) -> dict:
 
 
 @m.user_endpoint(path=["part_owner"], requires=device_scheme)
+@register_errors(device_online)
 def part_owner(data: dict, user: str) -> dict:
     return {"ok": game_content.part_owner(data["device_uuid"], user)}
 
