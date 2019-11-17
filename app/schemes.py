@@ -24,8 +24,6 @@ miner_not_found: dict = {"error": "miner_not_found"}
 
 service_not_found: dict = {"error": "service_not_found"}
 
-unknown_service: dict = {"error": "unknown_service"}
-
 service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
 
 attack_not_running: dict = {"error": "attack_not_running"}
