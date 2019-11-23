@@ -137,6 +137,12 @@ class TestEssentials(TestCase):
         get_device_owner_patch.assert_called_with("the-device")
         part_owner_patch.assert_called_with("the-device", "user")
 
+    def test__check_device_online(self):
+        result = mock.MagicMock()
+        mock.m.contact_microservice.return_value = {"online": result}
+        self.assertEqual(result, essentials.check_device_online("the-device"))
+        mock.m.contact_microservice.assert_called_with("device", ["ping"], {"device_uuid": "the-device"})
+
     def test__get_device_owner(self):
         mock.m.contact_microservice.return_value = {"owner": "some-user"}
         expected_result = "some-user"

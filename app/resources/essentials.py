@@ -47,6 +47,10 @@ def controls_device(device: str, user: str) -> bool:
     return get_device_owner(device) == user or game_content.part_owner(device, user)
 
 
+def check_device_online(device: str) -> bool:
+    return m.contact_microservice("device", ["ping"], {"device_uuid": device}).get("online", False)
+
+
 def get_device_owner(device: str) -> str:
     return m.contact_microservice("device", ["owner"], {"device_uuid": device}).get("owner")
 

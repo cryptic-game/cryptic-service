@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from mock.mock_loader import mock
 from resources import service, bruteforce, miner
+from resources.errors import service_exists, device_online, has_service_and_device, device_accessible
 from schemes import (
     standard_scheme,
     device_scheme,
@@ -58,23 +59,30 @@ class TestApp(TestCase):
         registered_user_endpoints = mock.user_endpoints.copy()
         registered_ms_endpoints = mock.ms_endpoints.copy()
 
+        service_errors = (service_exists(), device_online, device_accessible)
+        bruteforce_errors = (service_exists("bruteforce"), device_online, device_accessible)
+        miner_errors = (
+            service_exists("miner", device_required=False),
+            device_online,
+            device_accessible,
+        )
         expected_user_endpoints = [
-            (["public_info"], standard_scheme, service.public_info),
-            (["use"], None, service.use),
-            (["private_info"], standard_scheme, service.private_info),
-            (["toggle"], standard_scheme, service.toggle),
-            (["delete"], standard_scheme, service.delete_service),
-            (["list"], device_scheme, service.list_services),
-            (["create"], None, service.create),
-            (["part_owner"], device_scheme, service.part_owner),
+            (["public_info"], standard_scheme, service.public_info, service_exists(), device_online),
+            (["use"], None, service.use, has_service_and_device, *service_errors),
+            (["private_info"], standard_scheme, service.private_info, *service_errors),
+            (["toggle"], standard_scheme, service.toggle, *service_errors),
+            (["delete"], standard_scheme, service.delete_service, *service_errors),
+            (["list"], device_scheme, service.list_services, device_online, device_accessible),
+            (["create"], None, service.create, device_online, device_accessible),
+            (["part_owner"], device_scheme, service.part_owner, device_online),
             (["list_part_owner"], {}, service.list_part_owner),
-            (["bruteforce", "attack"], attack_scheme, bruteforce.attack),
-            (["bruteforce", "status"], standard_scheme, bruteforce.status),
-            (["bruteforce", "stop"], standard_scheme, bruteforce.stop),
-            (["miner", "get"], service_scheme, miner.get),
+            (["bruteforce", "attack"], attack_scheme, bruteforce.attack, *bruteforce_errors),
+            (["bruteforce", "status"], standard_scheme, bruteforce.status, *bruteforce_errors),
+            (["bruteforce", "stop"], standard_scheme, bruteforce.stop, *bruteforce_errors),
+            (["miner", "get"], service_scheme, miner.get, *miner_errors),
             (["miner", "list"], wallet_scheme, miner.list_miners),
-            (["miner", "wallet"], miner_set_wallet_scheme, miner.set_wallet),
-            (["miner", "power"], miner_set_power_scheme, miner.set_power),
+            (["miner", "wallet"], miner_set_wallet_scheme, miner.set_wallet, *miner_errors),
+            (["miner", "power"], miner_set_power_scheme, miner.set_power, *miner_errors),
         ]
 
         expected_ms_endpoints = [
@@ -89,17 +97,36 @@ class TestApp(TestCase):
             (["delete_user"], service.delete_user),
         ]
 
-        for path, requires, func in expected_user_endpoints:
+        for path, requires, func, *errors in expected_user_endpoints:
             self.assertIn((path, requires), registered_user_endpoints)
+            endpoint_handler = mock.user_endpoint_handlers[tuple(path)]
             registered_user_endpoints.remove((path, requires))
-            self.assertIn(mock.user_endpoint_handlers[tuple(path)], elements)
-            self.assertEqual(func, mock.user_endpoint_handlers[tuple(path)])
+            self.assertIn(endpoint_handler, elements)
+            self.assertEqual(func, endpoint_handler)
+            if errors:
+                self.assertEqual(len(errors), len(endpoint_handler.__errors__))
+                for a, b in zip(errors, endpoint_handler.__errors__):
+                    if a == b:
+                        continue
+                    self.assertEqual(a.__qualname__, b.__qualname__)
+                    self.assertEqual(a.__closure__, b.__closure__)
+            else:
+                self.assertNotIn("__errors__", dir(endpoint_handler))
 
-        for path, func in expected_ms_endpoints:
+        for path, func, *errors in expected_ms_endpoints:
             self.assertIn(path, registered_ms_endpoints)
+            endpoint_handler = mock.ms_endpoint_handlers[tuple(path)]
             registered_ms_endpoints.remove(path)
-            self.assertIn(mock.ms_endpoint_handlers[tuple(path)], elements)
-            self.assertEqual(func, mock.ms_endpoint_handlers[tuple(path)])
-
+            self.assertIn(endpoint_handler, elements)
+            self.assertEqual(func, endpoint_handler)
+            if errors:
+                self.assertEqual(len(errors), len(endpoint_handler.__errors__))
+                for a, b in zip(errors, endpoint_handler.__errors__):
+                    if a == b:
+                        continue
+                    self.assertEqual(a.__qualname__, b.__qualname__)
+                    self.assertEqual(a.__closure__, b.__closure__)
+            else:
+                self.assertNotIn("__errors__", dir(endpoint_handler))
         self.assertFalse(registered_user_endpoints)
         self.assertFalse(registered_ms_endpoints)

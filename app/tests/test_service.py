@@ -7,14 +7,10 @@ from models.miner import Miner
 from models.service import Service
 from resources import service, game_content
 from schemes import (
-    unknown_service,
-    invalid_request,
     service_cannot_be_used,
-    permission_denied,
     service_not_found,
     cannot_toggle_directly,
     success_scheme,
-    device_not_found,
     service_not_supported,
     already_own_this_service,
     could_not_start_service,
@@ -41,148 +37,89 @@ class TestService(TestCase):
     def test__switch(self):
         self.assertEqual(game_content.portscan, service.switch["portscan"])
 
-    def test__user_endpoint__public_info__service_not_found(self):
-        self.query_service.filter_by().first.return_value = None
-        self.assertEqual(unknown_service, service.public_info({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
     def test__user_endpoint__public_info__service_not_running(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.running_port = None
         mock_service.running = False
-        self.assertEqual(unknown_service, service.public_info({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+        self.assertEqual(
+            service_not_found, service.public_info({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
+        )
 
     def test__user_endpoint__public_info__successful(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.running_port = 42
         mock_service.running = True
 
         expected_result = mock_service.public_data()
-        actual_result = service.public_info({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.public_info({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
         mock_service.public_data.assert_called_with()
 
-    def test__user_endpoint__use__invalid_request(self):
-        self.assertEqual(invalid_request, service.use({}, ""))
-        self.assertEqual(invalid_request, service.use({"device_uuid": "uuid"}, ""))
-        self.assertEqual(invalid_request, service.use({"service_uuid": "uuid"}, ""))
-
-        self.assertEqual(invalid_request, service.use({"device_uuid": None, "service_uuid": "uuid"}, ""))
-        self.assertEqual(invalid_request, service.use({"device_uuid": "uuid", "service_uuid": None}, ""))
-
-    def test__user_endpoint__use__service_not_found(self):
-        self.query_service.filter_by().first.return_value = None
-        self.assertEqual(unknown_service, service.use({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
-    @patch("resources.service.game_content.part_owner")
-    def test__user_endpoint__use__permission_denied(self, part_owner_patch):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.owner = "someone-else"
-        part_owner_patch.return_value = False
-        self.assertEqual(unknown_service, service.use({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        part_owner_patch.assert_called_with("d", "u")
-
     def test__user_endpoint__use__service_cannot_be_used(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.owner = "u"
+        mock_service = mock.MagicMock()
         mock_service.name = "not-in-dict"
-        self.assertEqual(service_cannot_be_used, service.use({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
+        self.assertEqual(
+            service_cannot_be_used, service.use({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
+        )
 
     @patch("resources.service.switch", {"tool": lambda data, user: {"from": "tool", "data": data, "user": user}})
     def test__user_endpoint__use__successful(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.owner = "u"
+        mock_service = mock.MagicMock()
         mock_service.name = "tool"
 
         data = {"service_uuid": "s", "device_uuid": "d"}
         expected_result = {"from": "tool", "data": data, "user": "u"}
-        actual_result = service.use(data, "u")
+        actual_result = service.use(data, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
-    def test__user_endpoint__private_info__unknown_service(self):
-        self.query_service.filter_by().first.return_value = None
-        self.assertEqual(unknown_service, service.private_info({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
-    def test__user_endpoint__private_info__permission_denied(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.check_access.return_value = False
-        self.assertEqual(permission_denied, service.private_info({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        mock_service.check_access.assert_called_with("u")
 
     def test__user_endpoint__private_info__successful(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.check_access.return_value = True
+        mock_service = mock.MagicMock()
 
         expected_result = mock_service.serialize
-        actual_result = service.private_info({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.private_info({}, "", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        mock_service.check_access.assert_called_with("u")
-
-    def test__user_endpoint__toggle__service_not_found(self):
-        self.query_service.filter_by().first.return_value = None
-        self.assertEqual(service_not_found, service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
-    def test__user_endpoint__toggle__permission_denied(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.owner = "someone-else"
-        self.assertEqual(permission_denied, service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
 
     @patch("resources.service.config", {"services": {"miner": {"toggleable": False}}})
     def test__user_endpoint__toggle__cannot_toggle_directly(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        mock_service.owner = "u"
+        mock_service = mock.MagicMock()
         mock_service.name = "miner"
 
         expected_result = cannot_toggle_directly
-        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
 
     @patch("resources.service.config", {"services": {"ssh": {"toggleable": True}}})
     @patch("resources.service.register_service")
     def test__user_endpoint__toggle__could_not_start_service(self, register_patch):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.owner = "u"
         mock_service.name = "ssh"
         mock_service.running = False
         register_patch.return_value = -1
 
         expected_result = could_not_start_service
-        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
         register_patch.assert_called_with(mock_service.device, mock_service.uuid, "ssh", "u")
         self.assertEqual(False, mock_service.running)
 
     @patch("resources.service.config", {"services": {"ssh": {"toggleable": True}}})
     @patch("resources.service.register_service")
     def test__user_endpoint__toggle__starting(self, register_patch):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.owner = "u"
         mock_service.name = "ssh"
         mock_service.running = False
 
         expected_result = mock_service.serialize
-        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
         register_patch.assert_called_with(mock_service.device, mock_service.uuid, "ssh", "u")
         self.assertEqual(True, mock_service.running)
         mock.wrapper.session.commit.assert_called_with()
@@ -190,135 +127,51 @@ class TestService(TestCase):
     @patch("resources.service.config", {"services": {"ssh": {"toggleable": True}}})
     @patch("resources.service.stop_service")
     def test__user_endpoint__toggle__stopping(self, stop_patch):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.owner = "u"
         mock_service.name = "ssh"
         mock_service.running = True
 
         expected_result = mock_service.serialize
-        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u")
+        actual_result = service.toggle({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
 
         self.assertEqual(expected_result, actual_result)
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
         stop_patch.assert_called_with(mock_service.device, mock_service.uuid, "u")
         self.assertEqual(False, mock_service.running)
         mock.wrapper.session.commit.assert_called_with()
 
-    def test__user_endpoint__delete__service_not_found(self):
-        self.query_service.filter_by().first.return_value = None
-        self.assertEqual(service_not_found, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
     def test__user_endpoint__delete__cannot_delete_ssh(self):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
+        mock_service = mock.MagicMock()
         mock_service.name = "ssh"
         self.assertEqual(
-            cannot_delete_enforced_service, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u")
+            cannot_delete_enforced_service,
+            service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service),
         )
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-
-    @patch("resources.service.controls_device")
-    def test__user_endpoint__delete__permission_denied(self, controls_device_patch):
-        self.query_service.filter_by().first.return_value = mock.MagicMock()
-        controls_device_patch.return_value = False
-        self.assertEqual(permission_denied, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        controls_device_patch.assert_called_with("d", "u")
 
     @patch("resources.service.delete_one_service")
-    @patch("resources.service.controls_device")
-    def test__user_endpoint__delete__successful(self, controls_device_patch, delete_patch):
-        mock_service = self.query_service.filter_by().first.return_value = mock.MagicMock()
-        controls_device_patch.return_value = True
-        self.assertEqual(success_scheme, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u"))
-        self.query_service.filter_by.assert_called_with(uuid="s", device="d")
-        controls_device_patch.assert_called_with("d", "u")
+    def test__user_endpoint__delete__successful(self, delete_patch):
+        mock_service = mock.MagicMock()
+        self.assertEqual(
+            success_scheme, service.delete_service({"service_uuid": "s", "device_uuid": "d"}, "u", mock_service)
+        )
         delete_patch.assert_called_with(mock_service)
 
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__list__device_not_found(self, exists_device_patch):
-        exists_device_patch.return_value = False
-
-        expected_result = device_not_found
-        actual_result = service.list_services({"device_uuid": "my-device"}, "user")
-
-        self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-
-    @patch("resources.service.controls_device")
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__list__permission_denied(self, exists_device_patch, controls_device_patch):
-        exists_device_patch.return_value = True
-        controls_device_patch.return_value = False
-
-        expected_result = permission_denied
-        actual_result = service.list_services({"device_uuid": "my-device"}, "user")
-
-        self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-        controls_device_patch.assert_called_with("my-device", "user")
-
-    @patch("resources.service.controls_device")
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__list__successful(self, exists_device_patch, controls_device_patch):
-        exists_device_patch.return_value = True
-        controls_device_patch.return_value = True
+    def test__user_endpoint__list__successful(self):
         services = self.query_service.filter_by().all.return_value = [mock.MagicMock() for _ in range(5)]
 
         expected_result = {"services": [s.serialize for s in services]}
         actual_result = service.list_services({"device_uuid": "my-device"}, "user")
 
         self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-        controls_device_patch.assert_called_with("my-device", "user")
         self.query_service.filter_by.assert_called_with(device="my-device")
-
-    def test__user_endpoint__create__invalid_request(self):
-        self.assertEqual(invalid_request, service.create({}, ""))
-        self.assertEqual(invalid_request, service.create({"device_uuid": "d"}, ""))
-        self.assertEqual(invalid_request, service.create({"name": "n"}, ""))
-
-        self.assertEqual(invalid_request, service.create({"device_uuid": None, "name": "n"}, ""))
-        self.assertEqual(invalid_request, service.create({"device_uuid": "d", "name": None}, ""))
 
     @patch("resources.service.config", {"services": {}})
     def test__user_endpoint__create__service_not_supported(self):
         self.assertEqual(service_not_supported, service.create({"device_uuid": "d", "name": "invalid-service"}, ""))
 
     @patch("resources.service.config", {"services": {"the-service": {}}})
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__create__device_not_found(self, exists_device_patch):
-        exists_device_patch.return_value = False
-
-        expected_result = device_not_found
-        actual_result = service.create({"device_uuid": "my-device", "name": "the-service"}, "user")
-
-        self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-
-    @patch("resources.service.config", {"services": {"the-service": {}}})
-    @patch("resources.service.controls_device")
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__create__permission_denied(self, exists_device_patch, controls_device_patch):
-        exists_device_patch.return_value = True
-        controls_device_patch.return_value = False
-
-        expected_result = permission_denied
-        actual_result = service.create({"device_uuid": "my-device", "name": "the-service"}, "user")
-
-        self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-        controls_device_patch.assert_called_with("my-device", "user")
-
-    @patch("resources.service.config", {"services": {"the-service": {}}})
     @patch("resources.service.get_device_owner")
-    @patch("resources.service.controls_device")
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__create__already_own_this_service(
-        self, exists_device_patch, controls_device_patch, get_device_owner_patch
-    ):
-        exists_device_patch.return_value = True
-        controls_device_patch.return_value = True
+    def test__user_endpoint__create__already_own_this_service(self, get_device_owner_patch):
         self.query_func_count.filter_by().scalar.return_value = 1
         get_device_owner_patch.return_value = "dev-owner"
 
@@ -326,8 +179,6 @@ class TestService(TestCase):
         actual_result = service.create({"device_uuid": "my-device", "name": "the-service"}, "user")
 
         self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-        controls_device_patch.assert_called_with("my-device", "user")
         self.sqlalchemy_func.count.assert_called_with(Service.name)
         get_device_owner_patch.assert_called_with("my-device")
         self.query_func_count.filter_by.assert_called_with(owner="dev-owner", device="my-device", name="the-service")
@@ -335,13 +186,7 @@ class TestService(TestCase):
     @patch("resources.service.config", {"services": {"the-service": {}}})
     @patch("resources.service.create_service")
     @patch("resources.service.get_device_owner")
-    @patch("resources.service.controls_device")
-    @patch("resources.service.exists_device")
-    def test__user_endpoint__create__successful(
-        self, exists_device_patch, controls_device_patch, get_device_owner_patch, create_patch
-    ):
-        exists_device_patch.return_value = True
-        controls_device_patch.return_value = True
+    def test__user_endpoint__create__successful(self, get_device_owner_patch, create_patch):
         self.query_func_count.filter_by().scalar.return_value = 0
         get_device_owner_patch.return_value = "dev-owner"
 
@@ -350,8 +195,6 @@ class TestService(TestCase):
         actual_result = service.create(data, "user")
 
         self.assertEqual(expected_result, actual_result)
-        exists_device_patch.assert_called_with("my-device")
-        controls_device_patch.assert_called_with("my-device", "user")
         self.sqlalchemy_func.count.assert_called_with(Service.name)
         get_device_owner_patch.assert_called_with("my-device")
         self.query_func_count.filter_by.assert_called_with(owner="dev-owner", device="my-device", name="the-service")
