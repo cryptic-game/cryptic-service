@@ -74,7 +74,7 @@ def set_power(data: dict, user: str, service: Service) -> dict:
     service.running = power > 0
     miner.power = power
     if service.running:
-        miner.started = int(time.time())
+        miner.started = int(time.time() * 1000)
     else:
         miner.started = None
 

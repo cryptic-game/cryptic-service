@@ -54,9 +54,9 @@ class TestMinerModel(TestCase):
         self.query_service.get.return_value = service
         time_patch.return_value = 37
 
-        expected_result = int((37 - 13) * 0.8)
+        expected_result = int((37000 - 13) * 0.8)
         actual_result = miner.update_miner()
 
         self.assertEqual(expected_result, actual_result)
-        self.assertEqual(37, miner.started)
+        self.assertEqual(37000, miner.started)
         mock.wrapper.session.commit.assert_called_with()
