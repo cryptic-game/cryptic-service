@@ -137,7 +137,7 @@ class TestMiner(TestCase):
         mock_miner = self.query_miner.get.return_value = mock.MagicMock()
         mock_service = mock.MagicMock()
         exists_wallet_patch.return_value = True
-        time_patch.return_value = "1337"
+        time_patch.return_value = 1337
 
         expected_result = mock_miner.serialize
         actual_result = miner.set_power({"power": 42}, "", mock_service)
@@ -150,7 +150,7 @@ class TestMiner(TestCase):
         self.assertEqual(change_miner_power_patch(), mock_service.speed)
         self.assertEqual(True, mock_service.running)
         self.assertEqual(42, mock_miner.power)
-        self.assertEqual(1337, mock_miner.started)
+        self.assertEqual(1337000, mock_miner.started)
         mock.wrapper.session.commit.assert_called_with()
 
     @patch("resources.miner.stop_service")

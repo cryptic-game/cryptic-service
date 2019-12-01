@@ -39,7 +39,7 @@ class Miner(wrapper.Base):
         if not service.running:
             return 0
 
-        now: int = int(time.time())
+        now: int = int(time.time() * 1000)
         mined_coins: int = int((now - self.started) * service.speed)
         if mined_coins > 0:
             self.started: int = now
