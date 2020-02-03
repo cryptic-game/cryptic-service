@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Optional
 
 from cryptic import register_errors
 
@@ -7,7 +7,14 @@ from app import m, wrapper
 from models.miner import Miner
 from models.service import Service
 from resources.errors import service_exists, device_online, device_accessible
-from resources.essentials import exists_wallet, update_miner, change_miner_power, stop_service, check_device_online
+from resources.essentials import (
+    exists_wallet,
+    update_miner,
+    change_miner_power,
+    stop_service,
+    check_device_online,
+    get_wallet_owner,
+)
 from schemes import (
     wallet_not_found,
     service_scheme,
@@ -48,8 +55,22 @@ def set_wallet(data: dict, user: str, service: Service) -> dict:
 
     update_miner(miner)
 
+    # notify old wallet owner
+    wallet_owner: Optional[str] = get_wallet_owner(miner.wallet)
+    if wallet_owner is not None:
+        m.contact_user(
+            wallet_owner, {"notify-id": "miner-disconnected", "origin": "miner/wallet", "wallet_uuid": miner.wallet}
+        )
+
     miner.wallet = wallet_uuid
     wrapper.session.commit()
+
+    # notify new wallet owner
+    wallet_owner: Optional[str] = get_wallet_owner(miner.wallet)
+    if wallet_owner is not None:
+        m.contact_user(
+            wallet_owner, {"notify-id": "miner-connected", "origin": "miner/wallet", "wallet_uuid": miner.wallet}
+        )
 
     return miner.serialize
 
@@ -77,6 +98,13 @@ def set_power(data: dict, user: str, service: Service) -> dict:
         miner.started = int(time.time() * 1000)
     else:
         miner.started = None
+
+    # notify wallet owner
+    wallet_owner: Optional[str] = get_wallet_owner(miner.wallet)
+    if wallet_owner is not None:
+        m.contact_user(
+            wallet_owner, {"notify-id": "miner-rate-changed", "origin": "miner/power", "wallet_uuid": miner.wallet}
+        )
 
     wrapper.session.commit()
 

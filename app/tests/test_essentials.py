@@ -160,6 +160,22 @@ class TestEssentials(TestCase):
         self.assertEqual(response, actual_result)
         mock.m.contact_microservice.assert_called_with("currency", ["exists"], {"source_uuid": "the-wallet"})
 
+    def test__get_wallet_owner__does_not_exist(self):
+        mock.m.contact_microservice.return_value = {"error": "blubb"}
+
+        actual_result = essentials.get_wallet_owner("the-wallet")
+
+        self.assertEqual(None, actual_result)
+        mock.m.contact_microservice.assert_called_with("currency", ["owner"], {"source_uuid": "the-wallet"})
+
+    def test__get_wallet_owner__successful(self):
+        mock.m.contact_microservice.return_value = {"owner": "blubb"}
+
+        actual_result = essentials.get_wallet_owner("the-wallet")
+
+        self.assertEqual("blubb", actual_result)
+        mock.m.contact_microservice.assert_called_with("currency", ["owner"], {"source_uuid": "the-wallet"})
+
     def test__update_miner(self):
         mock_miner = mock.MagicMock()
         mock_miner.update_miner.return_value = 1337

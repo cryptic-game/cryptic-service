@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 from uuid import uuid4
 
 from app import m, wrapper
@@ -57,6 +57,10 @@ def get_device_owner(device: str) -> str:
 
 def exists_wallet(wallet: str) -> bool:
     return m.contact_microservice("currency", ["exists"], {"source_uuid": wallet})["exists"]
+
+
+def get_wallet_owner(wallet: str) -> Optional[str]:
+    return m.contact_microservice("currency", ["owner"], {"source_uuid": wallet}).get("owner")
 
 
 def update_miner(miner: Miner):

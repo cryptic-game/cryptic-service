@@ -61,12 +61,35 @@ class TestMiner(TestCase):
         self.assertEqual(wallet_not_found, miner.set_wallet({"wallet_uuid": "wallet"}, "", mock_service))
         exists_wallet_patch.assert_called_with("wallet")
 
+    @patch("resources.miner.get_wallet_owner")
     @patch("resources.miner.update_miner")
     @patch("resources.miner.exists_wallet")
-    def test__user_endpoint__miner_wallet__successful(self, exists_wallet_patch, update_miner_patch):
+    def test__user_endpoint__miner_wallet__successful(self, exists_wallet_patch, update_miner_patch, owner_patch):
         mock_miner = self.query_miner.get.return_value = mock.MagicMock()
         mock_service = mock.MagicMock()
         exists_wallet_patch.return_value = True
+        owners = [mock.MagicMock(), mock.MagicMock()]
+        orig_owner = owners.copy()
+
+        def owner_handler(wallet):
+            self.assertEqual(mock_miner.wallet, wallet)
+            return owners.pop()
+
+        owner_patch.side_effect = owner_handler
+
+        def notification_handler(user, data):
+            self.assertEqual(orig_owner.pop(), user)
+            if orig_owner:
+                self.assertEqual(
+                    {"notify-id": "miner-disconnected", "origin": "miner/wallet", "wallet_uuid": mock_miner.wallet},
+                    data,
+                )
+            else:
+                self.assertEqual(
+                    {"notify-id": "miner-connected", "origin": "miner/wallet", "wallet_uuid": mock_miner.wallet}, data
+                )
+
+        mock.m.contact_user.side_effect = notification_handler
 
         expected_result = mock_miner.serialize
         actual_result = miner.set_wallet({"wallet_uuid": "wallet"}, "", mock_service)
@@ -77,6 +100,8 @@ class TestMiner(TestCase):
         update_miner_patch.assert_called_with(mock_miner)
         self.assertEqual("wallet", mock_miner.wallet)
         mock.wrapper.session.commit.assert_called_with()
+        self.assertFalse(owners)
+        self.assertFalse(orig_owner)
 
     @patch("resources.miner.exists_wallet")
     def test__user_endpoint__miner_power__wallet_not_found(self, exists_wallet_patch):
@@ -103,11 +128,12 @@ class TestMiner(TestCase):
         update_miner_patch.assert_called_with(mock_miner)
         change_miner_power_patch.assert_called_with(42, mock_service.uuid, mock_service.device, mock_service.owner)
 
+    @patch("resources.miner.get_wallet_owner")
     @patch("resources.miner.change_miner_power")
     @patch("resources.miner.update_miner")
     @patch("resources.miner.exists_wallet")
     def test__user_endpoint__miner_power__successful_stopped(
-        self, exists_wallet_patch, update_miner_patch, change_miner_power_patch,
+        self, exists_wallet_patch, update_miner_patch, change_miner_power_patch, owner_patch
     ):
         mock_miner = self.query_miner.get.return_value = mock.MagicMock()
         mock_service = mock.MagicMock()
@@ -125,14 +151,22 @@ class TestMiner(TestCase):
         self.assertEqual(False, mock_service.running)
         self.assertEqual(0, mock_miner.power)
         self.assertEqual(None, mock_miner.started)
+
+        owner_patch.assert_called_with(mock_miner.wallet)
+        mock.m.contact_user.assert_called_with(
+            owner_patch(),
+            {"notify-id": "miner-rate-changed", "origin": "miner/power", "wallet_uuid": mock_miner.wallet},
+        )
+
         mock.wrapper.session.commit.assert_called_with()
 
+    @patch("resources.miner.get_wallet_owner")
     @patch("resources.miner.time.time")
     @patch("resources.miner.change_miner_power")
     @patch("resources.miner.update_miner")
     @patch("resources.miner.exists_wallet")
     def test__user_endpoint__miner_power__successful_started(
-        self, exists_wallet_patch, update_miner_patch, change_miner_power_patch, time_patch,
+        self, exists_wallet_patch, update_miner_patch, change_miner_power_patch, time_patch, owner_patch
     ):
         mock_miner = self.query_miner.get.return_value = mock.MagicMock()
         mock_service = mock.MagicMock()
@@ -151,6 +185,13 @@ class TestMiner(TestCase):
         self.assertEqual(True, mock_service.running)
         self.assertEqual(42, mock_miner.power)
         self.assertEqual(1337000, mock_miner.started)
+
+        owner_patch.assert_called_with(mock_miner.wallet)
+        mock.m.contact_user.assert_called_with(
+            owner_patch(),
+            {"notify-id": "miner-rate-changed", "origin": "miner/power", "wallet_uuid": mock_miner.wallet},
+        )
+
         mock.wrapper.session.commit.assert_called_with()
 
     @patch("resources.miner.stop_service")
