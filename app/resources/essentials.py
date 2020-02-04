@@ -59,8 +59,8 @@ def exists_wallet(wallet: str) -> bool:
     return m.contact_microservice("currency", ["exists"], {"source_uuid": wallet})["exists"]
 
 
-def get_wallet_owner(wallet: str) -> Optional[str]:
-    return m.contact_microservice("currency", ["owner"], {"source_uuid": wallet}).get("owner")
+def get_wallet_owner(wallet_uuid: str) -> Optional[str]:
+    return m.contact_microservice("currency", ["owner"], {"source_uuid": wallet_uuid}).get("owner")
 
 
 def update_miner(miner: Miner):
