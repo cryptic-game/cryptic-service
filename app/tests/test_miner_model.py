@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import _patch, patch
+from unittest.mock import patch
 
 from mock.mock_loader import mock
 from models.miner import Miner
