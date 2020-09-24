@@ -7,7 +7,7 @@ import vars
 class TestVars(TestCase):
     def test__calculate_speed_miner(self):
         self.assertEqual(
-            0.0115 - (0.0115 - 0.006) * math.exp((-2 * 3 * (3 * 2 / 116_000 - 1)) / 58_000_000_000),
+            0.0115 - (0.0115 - 0.0006) * math.exp((-2 * 3 * (3 * 2 / 116_000 - 1)) / 58_000_000_000),
             vars.calculate_speed_miner((0, 0, 0, 0, 0), (2, 3, 5, 7, 11)),
         )
 
