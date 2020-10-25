@@ -7,7 +7,7 @@ def calculate_speed_miner(
     edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
 ) -> float:
     cpu, ram, *_ = rdata
-    return 0.0115 - (0.0115 - 0.0006) * math.exp((-cpu * ram * (ram * cpu / 116_000 - 1)) / 58_000_000_000)
+    return cpu * ram / 1350 / 24 / 60 / 60
 
 
 def calculate_speed_bruteforce(
@@ -67,7 +67,7 @@ config: dict = {
             "allow_remote_access": False,
             "auto_start": False,
             "toggleable": False,
-            "needs": {"cpu": 1200, "ram": 112, "gpu": 24, "disk": 10, "network": 375},
+            "needs": {"cpu": 5000, "ram": 112, "gpu": 24, "disk": 10, "network": 375},
             "speedm": calculate_speed_miner,
         },
     },
