@@ -7,7 +7,7 @@ def calculate_speed_miner(
     edata: Tuple[float, float, float, float, float], rdata: Tuple[float, float, float, float, float]
 ) -> float:
     cpu, ram, *_ = rdata
-    return cpu * ram / 1350 / 24 / 60 / 60
+    return cpu * ram / (1350 * 24 * 60 * 60)
 
 
 def calculate_speed_bruteforce(
