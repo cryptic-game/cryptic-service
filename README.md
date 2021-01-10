@@ -1,4 +1,4 @@
-cryptic-service
+cryptic-service [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cryptic-game_cryptic-service&metric=coverage)](https://sonarcloud.io/dashboard?id=cryptic-game_cryptic-service)
 ============
 
 The official service microservice of Cryptic (https://cryptic-game.net/).
@@ -19,7 +19,7 @@ If you only need a mysql-server you can bring it up with:
 
 ## Docker-Hub
 
-This microservice is online on docker-hub (https://hub.docker.com/r/useto/cryptic-service/).
+This microservice is online on docker-hub (https://hub.docker.com/r/crypticcp/cryptic-service/).
 
 ## API Documentation
 

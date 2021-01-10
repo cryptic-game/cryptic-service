@@ -1,15 +1,52 @@
-invalid_request: dict = {"error": "invalid request"}
+from scheme import UUID, Float, Integer, Union
+
+invalid_request: dict = {"error": "invalid_request"}
 
 success_scheme: dict = {"ok": True}
 
-multiple_services: dict = {"error": "you already own a service with this name"}
+already_own_this_service: dict = {"error": "already_own_this_service"}
 
-service_is_not_supported: dict = {"error": "this service is not supported"}
+service_not_supported: dict = {"error": "service_not_supported"}
 
-permission_denied: dict = {"error": "permission denied"}
+service_not_running: dict = {"error": "service_not_running"}
 
-device_does_not_exist: dict = {"error": "this device does not exist"}
+permission_denied: dict = {"error": "permission_denied"}
 
-unknown_endpoint: dict = {"error": "unknown endpoint"}
+cannot_toggle_directly: dict = {"error": "cannot_toggle_directly"}
 
-unknown_service: dict = {"error": "unknown service"}
+device_not_found: dict = {"error": "device_not_found"}
+
+device_not_online: dict = {"error": "device_not_online"}
+
+wallet_not_found: dict = {"error": "wallet_not_found"}
+
+miner_not_found: dict = {"error": "miner_not_found"}
+
+service_not_found: dict = {"error": "service_not_found"}
+
+service_cannot_be_used: dict = {"error": "service_cannot_be_used"}
+
+attack_not_running: dict = {"error": "attack_not_running"}
+
+attack_already_running: dict = {"error": "attack_already_running"}
+
+could_not_start_service: dict = {"error": "could_not_start_service"}
+
+cannot_delete_enforced_service: dict = {"error": "cannot_delete_enforced_service"}
+
+attack_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID(), "target_service": UUID(), "target_device": UUID()}
+
+standard_scheme: dict = {"device_uuid": UUID(), "service_uuid": UUID()}
+
+device_scheme = {"device_uuid": UUID()}
+
+service_scheme = {"service_uuid": UUID()}
+
+wallet_scheme = {"wallet_uuid": UUID()}
+
+miner_set_wallet_scheme = {"service_uuid": UUID(), "wallet_uuid": UUID()}
+
+miner_set_power_scheme = {
+    "service_uuid": UUID(),
+    "power": Union([Float(minimum=0.0, maximum=1.0), Integer(minimum=0, maximum=1)]),
+}
